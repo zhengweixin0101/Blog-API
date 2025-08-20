@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { format } = require('date-fns');
 
 router.get('/', async (req, res) => {
     const { slug } = req.query;
@@ -12,13 +11,12 @@ router.get('/', async (req, res) => {
         if (!rows[0]) return res.status(404).json({ error: 'Article not found' });
 
         const article = rows[0];
-        const formattedDate = format(new Date(article.date), 'yyyy-MM-dd');
 
         res.json({
             frontmatter: {
                 slug: article.slug,
                 title: article.title,
-                date: formattedDate,
+                date: article.date,
                 description: article.description || '',
                 tags: article.tags || []
             },

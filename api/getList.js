@@ -2,12 +2,15 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-const formatDate = d => d ? new Date(d).toISOString().split('T')[0] : null;
-
 router.get('/', async (_req, res) => {
     try {
         const { rows } = await db.query(`
-            SELECT slug, title, date, description, tags
+            SELECT 
+                slug, 
+                title, 
+                TO_CHAR(date, 'YYYY-MM-DD') AS date,
+                description, 
+                tags
             FROM articles
             ORDER BY date DESC
         `);
@@ -15,7 +18,7 @@ router.get('/', async (_req, res) => {
         const formattedRows = rows.map(row => ({
             slug: row.slug,
             title: row.title,
-            date: formatDate(row.date),
+            date: row.date,
             description: row.description,
             tags: row.tags || []
         }));
