@@ -2,20 +2,14 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db.js'); // db.js 在同目录
 
-// 辅助函数：将 JS 数组转 PostgreSQL text[] 字符串
-function arrayToPgTextArray(arr) {
-    if (!arr || arr.length === 0) return '{}';
-    return '{' + arr.map(s => s.replace(/"/g, '\\"')).join(',') + '}';
-}
-
 // 编辑或创建文章接口
-// 前端发送 JSON: { slug, title, content, tags?, description? }
+// 前端发送 JSON: { slug, title?, content?, tags?, description?, date? }
 router.put('/', async (req, res) => {
     try {
-        const { slug, title, content, tags, description } = req.body;
+        const { slug, title, content, tags, description, date } = req.body;
 
-        if (!slug || !title || !content) {
-            return res.status(400).json({ error: 'slug, title and content are required' });
+        if (!slug) {
+            return res.status(400).json({ error: 'slug is required' });
         }
 
         // 检查文章是否存在
@@ -36,23 +30,27 @@ router.put('/', async (req, res) => {
                 values.push(content);
             }
             if (tags !== undefined) {
-                fields.push(`tags = $${idx++}::text[]`);
-                values.push(arrayToPgTextArray(tags));
+                fields.push(`tags = $${idx++}`);
+                values.push(tags); // 直接传数组
             }
             if (description !== undefined) {
                 fields.push(`description = $${idx++}`);
                 values.push(description);
             }
+            if (date !== undefined) {
+                fields.push(`date = $${idx++}`);
+                values.push(date); // 'YYYY-MM-DD' 字符串，Postgres 会自动解析
+            }
 
             fields.push(`updated_at = NOW()`);
-            values.push(slug);
 
             const query = `
-        UPDATE articles
-        SET ${fields.join(', ')}
-        WHERE slug = $${idx}
-        RETURNING *
-      `;
+                UPDATE articles
+                SET ${fields.join(', ')}
+                WHERE slug = $${idx}
+                RETURNING *
+            `;
+            values.push(slug);
 
             const result = await db.query(query, values);
             return res.json({ message: 'Article updated successfully', article: result.rows[0] });
@@ -60,15 +58,17 @@ router.put('/', async (req, res) => {
         } else {
             // 文章不存在 → 创建
             const result = await db.query(
-                `INSERT INTO articles (slug, title, content, tags, description, created_at, updated_at)
-         VALUES ($1, $2, $3, $4::text[], $5, NOW(), NOW())
-         RETURNING *`,
+                `INSERT INTO articles 
+                 (slug, title, content, tags, description, date, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                 RETURNING *`,
                 [
                     slug,
-                    title,
-                    content,
-                    tags ? arrayToPgTextArray(tags) : '{}',
-                    description || null
+                    title || '',
+                    content || '',
+                    tags || [],
+                    description || null,
+                    date || null
                 ]
             );
             return res.json({ message: 'Article created successfully', article: result.rows[0] });
