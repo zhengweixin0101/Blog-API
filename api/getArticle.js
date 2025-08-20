@@ -1,32 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { format } = require('date-fns');
 
-router.get('/', async (req, res) => {
-    const { slug } = req.query;
-    if (!slug) return res.status(400).json({ error: 'Slug is required' });
+const formatDate = d => d ? new Date(d).toISOString().split('T')[0] : null;
 
+router.get('/', async (_req, res) => {
     try {
-        const { rows } = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
-        if (!rows[0]) return res.status(404).json({ error: 'Article not found' });
+        const { rows } = await db.query(`
+            SELECT slug, title, date, description, tags
+            FROM articles
+            ORDER BY date DESC
+        `);
 
-        const article = rows[0];
-        const formattedDate = format(new Date(article.date), 'yyyy-MM-dd');
+        const formattedRows = rows.map(row => ({
+            slug: row.slug,
+            title: row.title,
+            date: formatDate(row.date),
+            description: row.description,
+            tags: row.tags || []
+        }));
 
-        res.json({
-            frontmatter: {
-                slug: article.slug,
-                title: article.title,
-                date: formattedDate,
-                description: article.description || '',
-                tags: article.tags || []
-            },
-            content: article.content
-        });
+        res.json(formattedRows);
     } catch (err) {
-        console.error(`Error fetching article ${slug}:`, err);
-        res.status(500).json({ error: 'Database error' });
+        console.error('getList Error:', err);
+        res.status(500).json({ error: 'Database error', stack: err.stack });
     }
 });
 
