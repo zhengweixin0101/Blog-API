@@ -10,9 +10,14 @@ router.get('/', async (req, res) => {
 
     try {
         const { rows } = await db.query(
-            'SELECT slug, title, description, tags, content, TO_CHAR(date, \'YYYY-MM-DD\') AS date FROM articles WHERE slug = $1',
+            `SELECT slug, title, description, tags, content,
+                    TO_CHAR(date, 'YYYY-MM-DD') AS date,
+                    published
+             FROM articles
+             WHERE slug = $1`,
             [slug]
         );
+
         if (!rows[0]) return res.status(404).json({ error: 'Article not found' });
 
         const article = rows[0];
@@ -23,7 +28,8 @@ router.get('/', async (req, res) => {
                 title: article.title,
                 date: article.date,
                 description: article.description || '',
-                tags: article.tags || []
+                tags: article.tags || [],
+                published: article.published
             },
             content: article.content
         });
