@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// 获取文章列表接口
+// 直接请求 /api/list
 router.get('/', async (req, res) => {
     try {
         const { rows } = await db.query(

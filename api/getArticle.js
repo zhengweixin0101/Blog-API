@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// 获取文章内容接口
+// 直接请求 /api/article?slug={slug}
 router.get('/', async (req, res) => {
     const { slug } = req.query;
     if (!slug) return res.status(400).json({ error: 'Slug is required' });

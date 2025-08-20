@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db.js');
 
 // 编辑或创建文章接口
-// 前端发送 JSON: { slug, title?, content?, tags?, description?, date?, published? }
+// 前端发送 JSON: { slug, title?, date?, tags?, description?, published?, content? }
 router.put('/', async (req, res) => {
     try {
         const { slug, title, content, tags, description, date, published } = req.body;
