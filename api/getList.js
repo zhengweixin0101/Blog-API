@@ -7,16 +7,16 @@ const formatDate = d => d ? new Date(d).toISOString().split('T')[0] : null;
 router.get('/', async (_req, res) => {
     try {
         const { rows } = await db.query(`
-            SELECT id, slug, title, date, description, tags, content, published, created_at, updated_at
+            SELECT slug, title, date, description, tags
             FROM articles
             ORDER BY date DESC
         `);
 
         const formattedRows = rows.map(row => ({
-            ...row,
+            slug: row.slug,
+            title: row.title,
             date: formatDate(row.date),
-            created_at: formatDate(row.created_at),
-            updated_at: formatDate(row.updated_at),
+            description: row.description,
             tags: row.tags || []
         }));
 
