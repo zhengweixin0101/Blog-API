@@ -3,10 +3,10 @@ const router = express.Router();
 const db = require('../db.js');
 
 // 编辑或创建文章接口
-// 前端发送 JSON: { slug, title?, content?, tags?, description?, date? }
+// 前端发送 JSON: { slug, title?, content?, tags?, description?, date?, published? }
 router.put('/', async (req, res) => {
     try {
-        const { slug, title, content, tags, description, date } = req.body;
+        const { slug, title, content, tags, description, date, published } = req.body;
 
         if (!slug) {
             return res.status(400).json({ error: 'slug is required' });
@@ -40,6 +40,10 @@ router.put('/', async (req, res) => {
                 fields.push(`date = $${idx++}`);
                 values.push(date);
             }
+            if (published !== undefined) {
+                fields.push(`published = $${idx++}`);
+                values.push(published);
+            }
 
             fields.push(`updated_at = NOW()`);
 
@@ -57,8 +61,8 @@ router.put('/', async (req, res) => {
         } else {
             const result = await db.query(
                 `INSERT INTO articles 
-                 (slug, title, content, tags, description, date, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                 (slug, title, content, tags, description, date, published, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                  RETURNING *`,
                 [
                     slug,
@@ -66,7 +70,8 @@ router.put('/', async (req, res) => {
                     content || '',
                     tags || [],
                     description || null,
-                    date || null
+                    date || null,
+                    published !== undefined ? published : false
                 ]
             );
             return res.json({ message: 'Article created successfully', article: result.rows[0] });

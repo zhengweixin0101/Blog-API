@@ -2,31 +2,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const { rows } = await db.query(`
-            SELECT 
-                slug, 
-                title, 
-                TO_CHAR(date, 'YYYY-MM-DD') AS date,
-                description, 
-                tags
-            FROM articles
-            ORDER BY date DESC
-        `);
+        const { rows } = await db.query(
+            `SELECT slug, title, description, tags, date 
+             FROM articles 
+             WHERE published = true
+             ORDER BY date DESC`
+        );
 
-        const formattedRows = rows.map(row => ({
+        res.json(rows.map(row => ({
             slug: row.slug,
             title: row.title,
-            date: row.date,
-            description: row.description,
-            tags: row.tags || []
-        }));
-
-        res.json(formattedRows);
+            description: row.description || null,
+            tags: row.tags || null,
+            date: row.date
+        })));
     } catch (err) {
-        console.error('getList Error:', err);
-        res.status(500).json({ error: 'Database error', stack: err.stack });
+        console.error('Error fetching article list:', err);
+        res.status(500).json({ error: 'Database error' });
     }
 });
 
