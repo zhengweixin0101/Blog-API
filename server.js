@@ -3,8 +3,8 @@ const cors = require('cors');
 const app = express();
 
 app.use(cors());
-app.use(express.json());  // <--- 解析 JSON 请求体
-app.use(express.urlencoded({ extended: true })); // 可选，解析 URL-encoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const getArticleRoute = require('./api/getArticle');
 const getListRoute = require('./api/getList');
