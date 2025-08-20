@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db.js'); // db.js 在同目录
+const db = require('../db.js');
 
 // 编辑或创建文章接口
 // 前端发送 JSON: { slug, title?, content?, tags?, description?, date? }
@@ -16,7 +16,6 @@ router.put('/', async (req, res) => {
         const existing = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
 
         if (existing.rows.length > 0) {
-            // 文章存在 → 更新
             const fields = [];
             const values = [];
             let idx = 1;
@@ -31,7 +30,7 @@ router.put('/', async (req, res) => {
             }
             if (tags !== undefined) {
                 fields.push(`tags = $${idx++}`);
-                values.push(tags); // 直接传数组
+                values.push(tags);
             }
             if (description !== undefined) {
                 fields.push(`description = $${idx++}`);
@@ -39,7 +38,7 @@ router.put('/', async (req, res) => {
             }
             if (date !== undefined) {
                 fields.push(`date = $${idx++}`);
-                values.push(date); // 'YYYY-MM-DD' 字符串，Postgres 会自动解析
+                values.push(date);
             }
 
             fields.push(`updated_at = NOW()`);
@@ -56,7 +55,6 @@ router.put('/', async (req, res) => {
             return res.json({ message: 'Article updated successfully', article: result.rows[0] });
 
         } else {
-            // 文章不存在 → 创建
             const result = await db.query(
                 `INSERT INTO articles 
                  (slug, title, content, tags, description, date, created_at, updated_at)
