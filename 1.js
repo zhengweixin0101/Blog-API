@@ -9,7 +9,7 @@ async function testEditArticle() {
             date: '2025-08-20',
             //tags: ['Node', 'Express'],
             //description: '描述'
-            published: false
+            published: true
         })
     });
 

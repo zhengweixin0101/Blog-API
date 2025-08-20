@@ -7,7 +7,10 @@ router.get('/', async (req, res) => {
     if (!slug) return res.status(400).json({ error: 'Slug is required' });
 
     try {
-        const { rows } = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
+        const { rows } = await db.query(
+            'SELECT slug, title, description, tags, content, TO_CHAR(date, \'YYYY-MM-DD\') AS date FROM articles WHERE slug = $1',
+            [slug]
+        );
         if (!rows[0]) return res.status(404).json({ error: 'Article not found' });
 
         const article = rows[0];
