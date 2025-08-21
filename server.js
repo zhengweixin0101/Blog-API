@@ -26,12 +26,14 @@ const getListRoute = require('./api/getList');
 const deleteArticleRoute = require('./api/deleteArticle');
 const addArticleRoute = require('./api/addArticle');
 const editArticleRoute = require('./api/editArticle');
+const editSlugRoute = require('./api/editSlug');
 
 app.use('/api/article', getArticleRoute);
 app.use('/api/list', getListRoute);
 app.use('/api/add', verifySecret, addArticleRoute);
 app.use('/api/edit', verifySecret, editArticleRoute);
 app.use('/api/delete', verifySecret, deleteArticleRoute);
+app.use('/api/edit-slug', verifySecret, editSlugRoute);
 
 // 启动
 const PORT = process.env.PORT || 8000;
