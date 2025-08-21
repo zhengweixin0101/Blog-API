@@ -11,11 +11,33 @@ app.use(express.urlencoded({ extended: true }));
 // 读取密钥
 const API_SECRET = process.env.API_SECRET;
 
-// 简单验证中间件
+// 密钥验证
+const failedAttempts = {};
+const MAX_ATTEMPTS = 3;
+const BLOCK_TIME = 10 * 365 * 24 * 60 * 60 * 1000; // 封禁时间
+
 function verifySecret(req, res, next) {
     const secret = req.headers['x-api-key']; // 前端传 x-api-key
+    const ip = req.ip;
+    // 检查是否被封锁
+    if (failedAttempts[ip] && failedAttempts[ip].blockedUntil > Date.now()) {
+        return res.status(429).json({ error: 'Too many failed attempts, try later' });
+    }
     if (!secret || secret !== API_SECRET) {
+        if (!failedAttempts[ip]) {
+            failedAttempts[ip] = { count: 1, blockedUntil: 0 };
+        } else {
+            failedAttempts[ip].count++;
+        }
+        if (failedAttempts[ip].count >= MAX_ATTEMPTS) {
+            failedAttempts[ip].blockedUntil = Date.now() + BLOCK_TIME;
+            failedAttempts[ip].count = 0;
+        }
         return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (failedAttempts[ip]) {
+        failedAttempts[ip].count = 0;
+        failedAttempts[ip].blockedUntil = 0;
     }
     next();
 }
