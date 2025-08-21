@@ -21,7 +21,7 @@ function verifySecret(req, res, next) {
     const ip = req.ip;
     // 检查是否被封锁
     if (failedAttempts[ip] && failedAttempts[ip].blockedUntil > Date.now()) {
-        return res.status(429).json({ error: 'Too many failed attempts, try later' });
+        return res.status(429).json({ error: 'Too many failed attempts, IP banned for ten years' });
     }
     if (!secret || secret !== API_SECRET) {
         if (!failedAttempts[ip]) {
