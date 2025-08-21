@@ -23,13 +23,15 @@ function verifySecret(req, res, next) {
 // 路由
 const getArticleRoute = require('./api/getArticle');
 const getListRoute = require('./api/getList');
-const editArticleRoute = require('./api/editArticle');
 const deleteArticleRoute = require('./api/deleteArticle');
+const addArticleRoute = require('./api/addArticle');
+const editArticleRoute = require('./api/editArticle');
 
 app.use('/api/article', getArticleRoute);
 app.use('/api/list', getListRoute);
-app.use('/api/edit', verifySecret, editArticleRoute);     // 需要验证
-app.use('/api/delete', verifySecret, deleteArticleRoute); // 需要验证
+app.use('/api/add', verifySecret, addArticleRoute);
+app.use('/api/edit', verifySecret, editArticleRoute);
+app.use('/api/delete', verifySecret, deleteArticleRoute);
 
 // 启动
 const PORT = process.env.PORT || 8000;
