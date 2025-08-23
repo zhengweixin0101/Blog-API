@@ -57,10 +57,6 @@ app.use('/api/edit', verifySecret, editArticleRoute);
 app.use('/api/delete', verifySecret, deleteArticleRoute);
 app.use('/api/edit-slug', verifySecret, editSlugRoute);
 
-app.get('/api/check-key', verifySecret, (_req, res) => {
-    res.json({ ok: true })
-})
-
 // 启动
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
