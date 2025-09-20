@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const db = require('./db.js');
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -7,6 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const PORT = process.env.PORT || 8000;
 
 // 读取密钥
 const API_SECRET = process.env.API_SECRET;
@@ -58,5 +61,12 @@ app.use('/api/delete', verifySecret, deleteArticleRoute);
 app.use('/api/edit-slug', verifySecret, editSlugRoute);
 
 // 启动
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+(async () => {
+    try {
+        await db.init(); // 初始化数据库
+        app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}/`));
+    } catch (err) {
+        console.error("❌ Failed to init database:", err);
+        process.exit(1);
+    }
+})();
