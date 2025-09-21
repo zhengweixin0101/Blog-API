@@ -39,8 +39,12 @@ router.get('/', async (req, res) => {
              ORDER BY date DESC`
         );
 
+        // 永不过期的缓存键列表
+        const noExpireKeys = ['posts:list', 'posts:list:all', 'posts:list:fields:slug'];
+
+        // 设置缓存
         if (redis) {
-            if (cacheKey === 'posts:list') {
+            if (noExpireKeys.includes(cacheKey)) {
                 await redis.set(cacheKey, JSON.stringify(rows));
             } else {
                 await redis.set(cacheKey, JSON.stringify(rows), 'EX', 7 * 24 * 60 * 60);
