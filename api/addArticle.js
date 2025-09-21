@@ -40,8 +40,21 @@ router.post('/', async (req, res) => {
         const newArticle = result.rows[0];
 
         if (redis) {
-            await redis.del('posts:list');
-            await redis.del('posts:list:all');
+            try {
+                let cursor = '0';
+                do {
+                    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
+                    cursor = nextCursor;
+                    if (keys.length > 0) {
+                        const batchSize = 50;
+                        for (let i = 0; i < keys.length; i += batchSize) {
+                            await redis.del(...keys.slice(i, i + batchSize));
+                        }
+                    }
+                } while (cursor !== '0');
+            } catch (err) {
+                console.error('Error deleting posts:list cache:', err);
+            }
         }
 
         res.json({ message: 'Article created successfully', article: newArticle });

@@ -7,13 +7,17 @@ const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 获取文章列表接口
 // 直接请求 /api/list，默认只返回已发布文章
-// /api/list?posts=all 返回全部文章
+// ?posts=all 返回全部文章
+// ?fields=slug,title,date 筛选返回字段
 router.get('/', async (req, res) => {
     try {
         const all = req.query.posts === 'all';
-        const cacheKey = all ? 'posts:list:all' : 'posts:list';
+        const fieldsQuery = req.query.fields;
+        const fields = fieldsQuery ? fieldsQuery.split(',').map(f => f.trim()) : null;
+        const cacheKey = fields
+            ? (all ? `posts:list:fields:${fields.join(',')}:all` : `posts:list:fields:${fields.join(',')}`)
+            : (all ? 'posts:list:all' : 'posts:list');
 
-        // 查询缓存
         let cached;
         if (redis) {
             cached = await redis.get(cacheKey);
@@ -22,33 +26,22 @@ router.get('/', async (req, res) => {
             return res.json(JSON.parse(cached));
         }
 
-        // 查询数据库
+        const defaultColumns = ['slug', 'title', 'description', 'tags', "TO_CHAR(date, 'YYYY-MM-DD') AS date", 'published'];
+        const columns = fields ? fields.map(f => {
+            if (f === 'date') return "TO_CHAR(date, 'YYYY-MM-DD') AS date";
+            return f;
+        }) : defaultColumns;
+
         const { rows } = await db.query(
-            `SELECT slug, title, description, tags,
-                    TO_CHAR(date, 'YYYY-MM-DD') AS date,
-                    published
+            `SELECT ${columns.join(', ')}
              FROM articles
              ${all ? '' : 'WHERE published = true'}
              ORDER BY date DESC`
         );
 
-        const formatted = rows.map(row => ({
-            slug: row.slug,
-            title: row.title,
-            date: row.date,
-            description: row.description || null,
-            tags: row.tags || null,
-            published: row.published
-        }));
+        await redis.set(cacheKey, JSON.stringify(rows), 'EX', 7 * 24 * 60 * 60);
 
-        if (redis) {
-            await redis.set('posts:list', JSON.stringify(
-                formatted.filter(row => row.published)
-            ));
-            await redis.set('posts:list:all', JSON.stringify(formatted));
-        }
-
-        res.json(all ? formatted : formatted.filter(row => row.published));
+        res.json(rows);
     } catch (err) {
         console.error('Error fetching article list:', err);
         res.status(500).json({ error: 'Database error' });
