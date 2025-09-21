@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db.js');
+const Redis = require('ioredis');
+
+const redis = new Redis(process.env.REDIS_URL);
 
 // 修改文章 slug 接口
 // 前端发送 JSON: { oldSlug, newSlug }
@@ -9,7 +12,7 @@ router.put('/', async (req, res) => {
         const { oldSlug, newSlug } = req.body;
 
         if (!oldSlug || !newSlug) {
-            return res.status(400).json({ error: 'newSlug and oldSlug is required' });
+            return res.status(400).json({ error: 'newSlug and oldSlug are required' });
         }
 
         // 检查旧 slug 是否存在
@@ -30,8 +33,13 @@ router.put('/', async (req, res) => {
             [newSlug, oldSlug]
         );
 
-        res.json({ message: 'Slug updated successfully', article: result.rows[0] });
+        const updatedArticle = result.rows[0];
 
+        await redis.del('posts:list:published');
+        await redis.del('posts:list:all');
+        await redis.del(`post:${oldSlug}`);
+
+        res.json({ message: 'Slug updated successfully', article: updatedArticle });
     } catch (err) {
         console.error('UpdateSlug Error:', err);
         res.status(500).json({ error: err.message, stack: err.stack });
