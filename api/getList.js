@@ -39,7 +39,13 @@ router.get('/', async (req, res) => {
              ORDER BY date DESC`
         );
 
-        await redis.set(cacheKey, JSON.stringify(rows), 'EX', 7 * 24 * 60 * 60);
+        if (redis) {
+            if (cacheKey === 'posts:list') {
+                await redis.set(cacheKey, JSON.stringify(rows));
+            } else {
+                await redis.set(cacheKey, JSON.stringify(rows), 'EX', 7 * 24 * 60 * 60);
+            }
+        }
 
         res.json(rows);
     } catch (err) {
