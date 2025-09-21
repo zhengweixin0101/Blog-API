@@ -6,10 +6,10 @@ const Redis = require('ioredis');
 const redis = new Redis(process.env.REDIS_URL);
 
 // 更新文章接口
-// 前端发送 JSON: { slug, title?, content?, html?, tags?, description?, date?, published? }
+// 前端发送 JSON: { slug, title?, content?, tags?, description?, date?, published? }
 router.put('/', async (req, res) => {
     try {
-        const { slug, title, content, html, tags, description, date, published } = req.body;
+        const { slug, title, content, tags, description, date, published } = req.body;
 
         if (!slug) {
             return res.status(400).json({ error: 'slug is required' });
@@ -27,7 +27,6 @@ router.put('/', async (req, res) => {
 
         if (title !== undefined) { fields.push(`title = $${idx++}`); values.push(title); }
         if (content !== undefined) { fields.push(`content = $${idx++}`); values.push(content); }
-        if (html !== undefined) { fields.push(`html = $${idx++}`); values.push(html); }
         if (tags !== undefined) { fields.push(`tags = $${idx++}`); values.push(tags); }
         if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description); }
         if (date !== undefined) { fields.push(`date = $${idx++}`); values.push(date); }
