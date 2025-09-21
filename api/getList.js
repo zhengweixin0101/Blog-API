@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const Redis = require('ioredis');
 
-const redis = new Redis(process.env.REDIS_URL);
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 获取文章列表接口
 // 直接请求 /api/list，默认只返回已发布文章
@@ -14,7 +14,10 @@ router.get('/', async (req, res) => {
         const cacheKey = all ? 'posts:list:all' : 'posts:list';
 
         // 查询缓存
-        const cached = await redis.get(cacheKey);
+        let cached;
+        if (redis) {
+            cached = await redis.get(cacheKey);
+        }
         if (cached) {
             return res.json(JSON.parse(cached));
         }
@@ -38,11 +41,12 @@ router.get('/', async (req, res) => {
             published: row.published
         }));
 
-        // 写入缓存
-        await redis.set('posts:list', JSON.stringify(
-            formatted.filter(row => row.published)
-        ));
-        await redis.set('posts:list:all', JSON.stringify(formatted));
+        if (redis) {
+            await redis.set('posts:list', JSON.stringify(
+                formatted.filter(row => row.published)
+            ));
+            await redis.set('posts:list:all', JSON.stringify(formatted));
+        }
 
         res.json(all ? formatted : formatted.filter(row => row.published));
     } catch (err) {

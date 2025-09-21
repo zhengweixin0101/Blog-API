@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db.js');
 const Redis = require('ioredis');
 
-const redis = new Redis(process.env.REDIS_URL);
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 修改文章 slug 接口
 // 前端发送 JSON: { oldSlug, newSlug }
@@ -34,10 +34,11 @@ router.put('/', async (req, res) => {
         );
 
         const updatedArticle = result.rows[0];
-
-        await redis.del('posts:list:published');
-        await redis.del('posts:list:all');
-        await redis.del(`post:${oldSlug}`);
+        if (redis) {
+            await redis.del('posts:list');
+            await redis.del('posts:list:all');
+            await redis.del(`post:${oldSlug}`);
+        }
 
         res.json({ message: 'Slug updated successfully', article: updatedArticle });
     } catch (err) {

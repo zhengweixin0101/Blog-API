@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const Redis = require('ioredis');
 
-const redis = new Redis(process.env.REDIS_URL);
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 获取文章内容接口
 // 直接请求 /api/article?slug={slug}
@@ -14,7 +14,10 @@ router.get('/', async (req, res) => {
     const cacheKey = `post:${slug}`;
 
     try {
-        const cached = await redis.get(cacheKey);
+        let cached;
+        if (redis) {
+            cached = await redis.get(cacheKey);
+        }
         if (cached) {
             return res.json(JSON.parse(cached));
         }
@@ -43,7 +46,9 @@ router.get('/', async (req, res) => {
             content: article.content
         };
 
-        await redis.set(cacheKey, JSON.stringify(responseData));
+        if (redis) {
+            await redis.set(cacheKey, JSON.stringify(responseData));
+        }
 
         res.json(responseData);
     } catch (err) {
