@@ -11,7 +11,7 @@ const redis = new Redis(process.env.REDIS_URL);
 router.get('/', async (req, res) => {
     try {
         const all = req.query.posts === 'all';
-        const cacheKey = all ? 'posts:list:all' : 'posts:list:published';
+        const cacheKey = all ? 'posts:list:all' : 'posts:list';
 
         // 查询缓存
         const cached = await redis.get(cacheKey);
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
         }));
 
         // 写入缓存
-        await redis.set('posts:list:published', JSON.stringify(
+        await redis.set('posts:list', JSON.stringify(
             formatted.filter(row => row.published)
         ));
         await redis.set('posts:list:all', JSON.stringify(formatted));
