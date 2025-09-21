@@ -15,6 +15,7 @@ async function init() {
             description TEXT,
             tags TEXT[],
             content TEXT,
+            html TEXT,
             published BOOLEAN DEFAULT false,
             date DATE,
             created_at TIMESTAMP DEFAULT NOW(),
