@@ -6,7 +6,7 @@ const Redis = require('ioredis');
 const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 获取文章内容接口
-// 直接请求 /api/article?slug={slug}
+// 直接请求 ?slug={slug}
 router.get('/', async (req, res) => {
     const { slug } = req.query;
     if (!slug) return res.status(400).json({ error: 'Slug is required' });

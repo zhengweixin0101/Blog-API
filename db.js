@@ -7,7 +7,7 @@ const pool = new Pool({
 });
 
 async function init() {
-    const createTableQuery = `
+    const createArticlesTableQuery = `
         CREATE TABLE IF NOT EXISTS articles (
             id SERIAL PRIMARY KEY,
             title TEXT NOT NULL,
@@ -21,7 +21,20 @@ async function init() {
             updated_at TIMESTAMP DEFAULT NOW()
         );
     `;
-    await pool.query(createTableQuery);
+
+    const createMemosTableQuery = `
+        CREATE TABLE IF NOT EXISTS talks (
+            id SERIAL PRIMARY KEY,
+            content TEXT NOT NULL,
+            link TEXT,
+            img TEXT[],
+            tags TEXT[],
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+    `;
+
+    await pool.query(createArticlesTableQuery);
+    await pool.query(createMemosTableQuery);
 }
 
 module.exports = {

@@ -53,12 +53,22 @@ const addArticleRoute = require('./api/article/addArticle');
 const editArticleRoute = require('./api/article/editArticle');
 const editSlugRoute = require('./api/article/editSlug');
 
+const getTalksRoute = require('./api/talks/get');
+const editTalkRoute = require('./api/talks/edit');
+const addTalkRoute = require('./api/talks/add');
+const deleteTalkRoute = require('./api/talks/delete');
+
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
 app.use('/api/article/add', verifySecret, addArticleRoute);
 app.use('/api/article/edit', verifySecret, editArticleRoute);
 app.use('/api/article/delete', verifySecret, deleteArticleRoute);
 app.use('/api/article/edit-slug', verifySecret, editSlugRoute);
+
+app.use('/api/talks/get', getTalksRoute);
+app.use('/api/talks/edit', verifySecret, editTalkRoute); s
+app.use('/api/talks/add', verifySecret, addTalkRoute);
+app.use('/api/talks/delete', verifySecret, deleteTalkRoute);
 
 // 启动
 (async () => {

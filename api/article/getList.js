@@ -6,7 +6,7 @@ const Redis = require('ioredis');
 const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 获取文章列表接口
-// 直接请求 /api/list，默认只返回已发布文章
+// 直接请求，默认只返回已发布文章
 // ?posts=all 返回全部文章
 // ?fields=slug,title,date 筛选返回字段
 router.get('/', async (req, res) => {
