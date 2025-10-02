@@ -30,7 +30,6 @@ router.get('/', async (req, res) => {
         const total = parseInt(totalResult.rows[0].count);
 
         res.json({
-            success: true,
             data: result.rows,
             page: Number(page),
             pageSize: Number(pageSize),
