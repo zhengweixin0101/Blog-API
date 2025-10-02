@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db.js');
+const db = require('../../db.js');
 const Redis = require('ioredis');
 
 const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;

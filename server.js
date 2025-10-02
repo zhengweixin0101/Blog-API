@@ -46,19 +46,19 @@ function verifySecret(req, res, next) {
 }
 
 // 路由
-const getArticleRoute = require('./api/getArticle');
-const getListRoute = require('./api/getList');
-const deleteArticleRoute = require('./api/deleteArticle');
-const addArticleRoute = require('./api/addArticle');
-const editArticleRoute = require('./api/editArticle');
-const editSlugRoute = require('./api/editSlug');
+const getArticleRoute = require('./api/article/getArticle');
+const getListRoute = require('./api/article/getList');
+const deleteArticleRoute = require('./api/article/deleteArticle');
+const addArticleRoute = require('./api/article/addArticle');
+const editArticleRoute = require('./api/article/editArticle');
+const editSlugRoute = require('./api/article/editSlug');
 
-app.use('/api/article', getArticleRoute);
-app.use('/api/list', getListRoute);
-app.use('/api/add', verifySecret, addArticleRoute);
-app.use('/api/edit', verifySecret, editArticleRoute);
-app.use('/api/delete', verifySecret, deleteArticleRoute);
-app.use('/api/edit-slug', verifySecret, editSlugRoute);
+app.use('/api/article/get', getArticleRoute);
+app.use('/api/article/list', getListRoute);
+app.use('/api/article/add', verifySecret, addArticleRoute);
+app.use('/api/article/edit', verifySecret, editArticleRoute);
+app.use('/api/article/delete', verifySecret, deleteArticleRoute);
+app.use('/api/article/edit-slug', verifySecret, editSlugRoute);
 
 // 启动
 (async () => {
