@@ -66,7 +66,7 @@ app.use('/api/article/delete', verifySecret, deleteArticleRoute);
 app.use('/api/article/edit-slug', verifySecret, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
-app.use('/api/talks/edit', verifySecret, editTalkRoute); s
+app.use('/api/talks/edit', verifySecret, editTalkRoute);
 app.use('/api/talks/add', verifySecret, addTalkRoute);
 app.use('/api/talks/delete', verifySecret, deleteTalkRoute);
 
