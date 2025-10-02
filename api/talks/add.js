@@ -12,15 +12,15 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ success: false, message: '内容不能为空' });
         }
 
+        const linksArray = Array.isArray(links) ? links : [links];
+
         const query = `
             INSERT INTO talks (content, links, img, tags)
             VALUES ($1, $2, $3, $4)
             RETURNING *;
         `;
 
-        const linksArray = Array.isArray(links) ? links : [links];
-
-        const result = await db.query(query, [content, linksArray, img, tags]);
+        const result = await db.query(query, [content, JSON.stringify(linksArray), img, tags]);
 
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {

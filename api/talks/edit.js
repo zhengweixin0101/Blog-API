@@ -24,7 +24,7 @@ router.put('/', async (req, res) => {
         }
         if (links !== undefined) {
             fields.push(`links = $${idx++}`);
-            values.push(Array.isArray(links) ? links : [links]);
+            values.push(JSON.stringify(Array.isArray(links) ? links : [links]));
         }
         if (img !== undefined) {
             fields.push(`img = $${idx++}`);

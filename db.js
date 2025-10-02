@@ -26,9 +26,9 @@ async function init() {
         CREATE TABLE IF NOT EXISTS talks (
             id SERIAL PRIMARY KEY,
             content TEXT NOT NULL,
-            links TEXT[],
-            img TEXT[],
-            tags TEXT[],
+            links JSONB DEFAULT '[]'::JSONB,
+            img TEXT[] DEFAULT '{}',
+            tags TEXT[] DEFAULT '{}',
             created_at TIMESTAMP DEFAULT NOW()
         );
     `;
