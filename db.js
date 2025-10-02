@@ -26,7 +26,7 @@ async function init() {
         CREATE TABLE IF NOT EXISTS talks (
             id SERIAL PRIMARY KEY,
             content TEXT NOT NULL,
-            link TEXT,
+            links TEXT[],
             img TEXT[],
             tags TEXT[],
             created_at TIMESTAMP DEFAULT NOW()

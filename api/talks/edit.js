@@ -4,9 +4,9 @@ const router = express.Router();
 const db = require('../../db.js');
 
 // 编辑说说接口
-// 前端发送 JSON: { id, content?, tags?, link?, img? }
+// 前端发送 JSON: { id, content?, tags?, links?, img? }
 router.put('/', async (req, res) => {
-    const { id, content, tags, link, img } = req.body;
+    const { id, content, tags, links, img } = req.body;
     if (!id) return res.status(400).json({ error: 'ID is required' });
 
     try {
@@ -22,9 +22,9 @@ router.put('/', async (req, res) => {
             fields.push(`tags = $${idx++}`);
             values.push(tags);
         }
-        if (link !== undefined) {
-            fields.push(`link = $${idx++}`);
-            values.push(link);
+        if (links !== undefined) {
+            fields.push(`links = $${idx++}`);
+            values.push(Array.isArray(links) ? links : [links]);
         }
         if (img !== undefined) {
             fields.push(`img = $${idx++}`);
