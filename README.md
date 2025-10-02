@@ -1,2 +1,2 @@
 # Blog-Article-API
-博客文章API
+博客API
