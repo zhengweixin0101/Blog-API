@@ -39,7 +39,7 @@ router.put('/', async (req, res) => {
 
         const query = `
             UPDATE talks
-            SET ${fields.join(', ')}, updated_at = NOW()
+            SET ${fields.join(', ')}
             WHERE id = $${idx}
             RETURNING *
         `;
