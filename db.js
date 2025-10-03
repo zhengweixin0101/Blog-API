@@ -27,7 +27,7 @@ async function init() {
             id SERIAL PRIMARY KEY,
             content TEXT NOT NULL,
             links JSONB DEFAULT '[]'::JSONB,
-            img TEXT[] DEFAULT '{}',
+            imgs JSONB DEFAULT '[]'::JSONB,
             tags TEXT[] DEFAULT '{}',
             created_at TIMESTAMP DEFAULT NOW()
         );

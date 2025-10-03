@@ -1,12 +1,11 @@
-// api/talks/edit.js
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
 
 // 编辑说说接口
-// 前端发送 JSON: { id, content?, tags?, links?, img? }
+// 前端发送 JSON: { id, content?, tags?, links?, imgs? }
 router.put('/', async (req, res) => {
-    const { id, content, tags, links, img } = req.body;
+    const { id, content, tags, links, imgs } = req.body;
     if (!id) return res.status(400).json({ error: 'ID is required' });
 
     try {
@@ -26,9 +25,9 @@ router.put('/', async (req, res) => {
             fields.push(`links = $${idx++}`);
             values.push(JSON.stringify(Array.isArray(links) ? links : [links]));
         }
-        if (img !== undefined) {
-            fields.push(`img = $${idx++}`);
-            values.push(img);
+        if (imgs !== undefined) {
+            fields.push(`imgs = $${idx++}`);
+            values.push(JSON.stringify(Array.isArray(imgs) ? imgs : [imgs]));
         }
 
         if (fields.length === 0) {

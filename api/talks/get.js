@@ -7,20 +7,25 @@ const router = express.Router();
 // 支持分页和筛选 ?page=2&pageSize=5&tag=其他
 router.get('/', async (req, res) => {
     try {
-        const { page = 1, pageSize = 10, tag, sort = 'desc' } = req.query;
+        let { page = 1, pageSize = 10, tag, sort = 'desc' } = req.query;
+        page = Number(page);
+        pageSize = Number(pageSize);
         const offset = (page - 1) * pageSize;
-        let baseQuery = 'SELECT * FROM talks';
-        const params = [];
 
+        const params = [];
+        let whereClause = '';
         if (tag) {
             params.push(tag);
-            baseQuery += ` WHERE $${params.length} = ANY(tags)`;
+            whereClause = `WHERE $1 = ANY(tags)`;
         }
 
-        baseQuery += ` ORDER BY created_at ${sort.toLowerCase() === 'asc' ? 'ASC' : 'DESC'}`;
-
+        const baseQuery = `
+            SELECT * FROM talks
+            ${whereClause}
+            ORDER BY created_at ${sort.toLowerCase() === 'asc' ? 'ASC' : 'DESC'}
+            LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+        `;
         params.push(pageSize, offset);
-        baseQuery += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
 
         const result = await db.query(baseQuery, params);
 
@@ -31,8 +36,8 @@ router.get('/', async (req, res) => {
 
         res.json({
             data: result.rows,
-            page: Number(page),
-            pageSize: Number(pageSize),
+            page,
+            pageSize,
             total,
             totalPages: Math.ceil(total / pageSize)
         });

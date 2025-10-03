@@ -3,24 +3,30 @@ const db = require('../../db.js');
 const router = express.Router();
 
 // 添加说说接口
-// 前端发送 JSON: { content, links?, img?, tags? }
+// 前端发送 JSON: { content, links?, imgs?, tags? }
 router.post('/', async (req, res) => {
     try {
-        const { content, links = [], img = [], tags = [] } = req.body;
+        const { content, links = [], imgs = [], tags = [] } = req.body;
 
         if (!content) {
             return res.status(400).json({ success: false, message: '内容不能为空' });
         }
 
         const linksArray = Array.isArray(links) ? links : [links];
+        const imgsArray = Array.isArray(imgs) ? imgs : [imgs];
 
         const query = `
-            INSERT INTO talks (content, links, img, tags)
+            INSERT INTO talks (content, links, imgs, tags)
             VALUES ($1, $2, $3, $4)
             RETURNING *;
         `;
 
-        const result = await db.query(query, [content, JSON.stringify(linksArray), img, tags]);
+        const result = await db.query(query, [
+            content,
+            JSON.stringify(linksArray),
+            JSON.stringify(imgsArray),
+            tags
+        ]);
 
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
