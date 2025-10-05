@@ -6,7 +6,7 @@ const router = express.Router();
 // 前端发送 JSON: { content, links?, imgs?, tags? }
 router.post('/', async (req, res) => {
     try {
-        const { content, links = [], imgs = [], tags = [] } = req.body;
+        const { content, links = [], imgs = [], tags = [], created_at } = req.body;
 
         if (!content) {
             return res.status(400).json({ success: false, message: '内容不能为空' });
@@ -14,10 +14,11 @@ router.post('/', async (req, res) => {
 
         const linksArray = Array.isArray(links) ? links : [links];
         const imgsArray = Array.isArray(imgs) ? imgs : [imgs];
+        const createdAtValue = created_at ? new Date(created_at) : new Date();
 
         const query = `
-            INSERT INTO talks (content, links, imgs, tags)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO talks (content, links, imgs, tags, created_at)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *;
         `;
 
@@ -25,7 +26,8 @@ router.post('/', async (req, res) => {
             content,
             JSON.stringify(linksArray),
             JSON.stringify(imgsArray),
-            tags
+            tags,
+            createdAtValue
         ]);
 
         res.json({ success: true, data: result.rows[0] });
