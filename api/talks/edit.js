@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
+const Redis = require('ioredis');
+
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 编辑说说接口
 // 前端发送 JSON: { id, content?, tags?, links?, imgs? }
@@ -47,6 +50,13 @@ router.put('/', async (req, res) => {
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Talk not found' });
+        }
+
+        if (redis) {
+            const keys = await redis.keys('talks:*');
+            if (keys.length > 0) {
+                await redis.del(keys);
+            }
         }
 
         res.json({ success: true, data: result.rows[0] });

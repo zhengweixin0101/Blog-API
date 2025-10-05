@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
+const Redis = require('ioredis');
+
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 删除说说接口
 // 前端发送 JSON: { id: '说说id' }
@@ -16,6 +19,13 @@ router.delete('/', async (req, res) => {
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Talk not found' });
+        }
+
+        if (redis) {
+            const keys = await redis.keys('talks:*');
+            if (keys.length > 0) {
+                await redis.del(keys);
+            }
         }
 
         res.json({ message: `Talk '${id}' deleted successfully` });
