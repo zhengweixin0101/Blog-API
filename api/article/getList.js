@@ -39,22 +39,18 @@ router.get('/', async (req, res) => {
              ORDER BY date DESC`
         );
 
-        // 永不过期的缓存键列表
-        const noExpireKeys = ['posts:list', 'posts:list:all', 'posts:list:fields:slug'];
-
-        // 设置缓存
         if (redis) {
-            if (noExpireKeys.includes(cacheKey)) {
-                await redis.set(cacheKey, JSON.stringify(rows));
-            } else {
+            try {
                 await redis.set(cacheKey, JSON.stringify(rows), 'EX', 7 * 24 * 60 * 60);
+            } catch (err) {
+                console.error('缓存出错了：', err);
             }
         }
 
         res.json(rows);
     } catch (err) {
-        console.error('Error fetching article list:', err);
-        res.status(500).json({ error: 'Database error' });
+        console.error('获取文章列表失败：', err);
+        res.status(500).json({ error: '数据库错误' });
     }
 });
 

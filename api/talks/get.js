@@ -40,7 +40,6 @@ router.get('/', async (req, res) => {
         `;
 
         let result;
-
         if (!page && !pageSize) {
             result = await db.query(baseQuery, params);
         } else if ((page && !pageSize) || (!page && pageSize)) {
@@ -73,20 +72,31 @@ router.get('/', async (req, res) => {
             totalQuery += ' WHERE $1 = ANY(tags)';
             totalParams.push(tag);
         }
-
         const totalResult = await db.query(totalQuery, totalParams);
         const total = parseInt(totalResult.rows[0].count, 10);
 
+        const tagResult = await db.query(`
+            SELECT DISTINCT unnest(tags) AS tag
+            FROM talks
+            WHERE tags IS NOT NULL
+        `);
+        const allTags = tagResult.rows.map(r => r.tag).filter(Boolean);
+
         const responseData = {
             data: result.rows,
+            allTags,
             page: page ? Number(page) : null,
             pageSize: pageSize ? Number(pageSize) : null,
             total,
-            totalPages: pageSize ? Math.ceil(total / pageSize) : 1
+            totalPages: pageSize ? Math.ceil(total / pageSize) : 1,
         };
 
         if (redis) {
-            await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 7 * 24 * 60 * 60);
+            try {
+                await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 7 * 24 * 60 * 60);
+            } catch (err) {
+                console.error('缓存出错了：', err);
+            }
         }
 
         res.json(responseData);

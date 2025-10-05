@@ -9,7 +9,7 @@ const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 // 前端发送 JSON: { id, content?, tags?, links?, imgs? }
 router.put('/', async (req, res) => {
     const { id, content, tags, links, imgs } = req.body;
-    if (!id) return res.status(400).json({ error: 'ID is required' });
+    if (!id) return res.status(400).json({ error: '缺少 id' });
 
     try {
         const fields = [];
@@ -34,7 +34,7 @@ router.put('/', async (req, res) => {
         }
 
         if (fields.length === 0) {
-            return res.status(400).json({ error: 'No fields to update' });
+            return res.status(400).json({ error: '没有需要更新的字段' });
         }
 
         values.push(id);
@@ -49,7 +49,7 @@ router.put('/', async (req, res) => {
         const result = await db.query(query, values);
 
         if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Talk not found' });
+            return res.status(404).json({ error: '说说不存在' });
         }
 
         if (redis) {
@@ -62,7 +62,7 @@ router.put('/', async (req, res) => {
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Database error' });
+        res.status(500).json({ error: '数据库错误' });
     }
 });
 

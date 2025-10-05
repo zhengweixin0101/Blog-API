@@ -12,13 +12,13 @@ router.put('/', async (req, res) => {
         const { slug, title, content, tags, description, date, published } = req.body;
 
         if (!slug) {
-            return res.status(400).json({ error: 'slug is required' });
+            return res.status(400).json({ error: '缺少 slug' });
         }
 
         // 检查文章是否存在
         const existing = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
         if (existing.rows.length === 0) {
-            return res.status(404).json({ error: 'Article not found' });
+            return res.status(404).json({ error: '文章未找到' });
         }
 
         const fields = [];
@@ -53,15 +53,15 @@ router.put('/', async (req, res) => {
                     }
                 } while (cursor !== '0');
             } catch (err) {
-                console.error('Error deleting posts:list cache:', err);
+                console.error('清除文章列表缓存时出错：', err);
             }
             await redis.del(`post:${articleSlug}`);
         }
 
-        res.json({ message: 'Article updated successfully', article: result.rows[0] });
+        res.json({ message: '文章更新成功', article: result.rows[0] });
 
     } catch (err) {
-        console.error('UpdateArticle Error:', err);
+        console.error('更新文章时遇到错误：', err);
         res.status(500).json({ error: err.message, stack: err.stack });
     }
 });

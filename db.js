@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const Redis = require('ioredis');
 require('dotenv').config();
 
 const pool = new Pool({
@@ -6,7 +7,27 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });
 
+let redis = null;
+if (process.env.REDIS_URL) {
+    redis = new Redis(process.env.REDIS_URL);
+    redis.on('connect', () => console.log('✅ Redis 连接成功'));
+    redis.on('error', (err) => console.error('❌ Redis error:', err));
+}
+
 async function init() {
+    if (redis) {
+        await redis.flushall();
+        console.log('🧹 Redis 缓存已清空');
+    }
+
+    const checkTablesQuery = `
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks');
+    `;
+    const result = await pool.query(checkTablesQuery);
+    const existingTables = result.rows.map(r => r.table_name);
+
     const createArticlesTableQuery = `
         CREATE TABLE IF NOT EXISTS articles (
             id SERIAL PRIMARY KEY,
@@ -33,11 +54,27 @@ async function init() {
         );
     `;
 
-    await pool.query(createArticlesTableQuery);
-    await pool.query(createMemosTableQuery);
+    const newlyCreated = [];
+
+    if (!existingTables.includes('articles')) {
+        await pool.query(createArticlesTableQuery);
+        newlyCreated.push('articles');
+    }
+
+    if (!existingTables.includes('talks')) {
+        await pool.query(createMemosTableQuery);
+        newlyCreated.push('talks');
+    }
+
+    if (newlyCreated.length > 0) {
+        console.log(`✅ 数据库未初始化，已自动创建表格：${newlyCreated.join(', ')}`);
+    } else {
+        console.log('✅ 数据库表格已存在，跳过初始化');
+    }
 }
 
 module.exports = {
     query: (text, params) => pool.query(text, params),
-    init
+    init,
+    redis,
 };

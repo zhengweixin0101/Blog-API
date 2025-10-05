@@ -9,7 +9,7 @@ const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 // 前端发送 JSON: { slug: '文章slug' }
 router.delete('/', async (req, res) => {
     const { slug } = req.body;
-    if (!slug) return res.status(400).json({ error: 'Slug is required' });
+    if (!slug) return res.status(400).json({ error: '缺少 slug' });
 
     try {
         const result = await db.query(
@@ -18,7 +18,7 @@ router.delete('/', async (req, res) => {
         );
 
         if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Article not found' });
+            return res.status(404).json({ error: '文章未找到' });
         }
 
         const articleSlug = result.rows[0].slug;
@@ -37,15 +37,15 @@ router.delete('/', async (req, res) => {
                     }
                 } while (cursor !== '0');
             } catch (err) {
-                console.error('Error deleting posts:list cache:', err);
+                console.error('删除文章缓存时出错：', err);
             }
         }
 
 
-        res.json({ message: `Article '${slug}' deleted successfully` });
+        res.json({ message: `文章 '${slug}' 删除成功` });
     } catch (err) {
-        console.error(`Error deleting article ${slug}:`, err);
-        res.status(500).json({ error: 'Database error' });
+        console.error(`删除文章 ${slug} 时出现错误:`, err);
+        res.status(500).json({ error: '数据库错误' });
     }
 });
 

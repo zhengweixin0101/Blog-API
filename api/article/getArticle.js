@@ -9,7 +9,7 @@ const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 // 直接请求 ?slug={slug}
 router.get('/', async (req, res) => {
     const { slug } = req.query;
-    if (!slug) return res.status(400).json({ error: 'Slug is required' });
+    if (!slug) return res.status(400).json({ error: '缺少 slug' });
 
     const cacheKey = `post:${slug}`;
 
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
             [slug]
         );
 
-        if (!rows[0]) return res.status(404).json({ error: 'Article not found' });
+        if (!rows[0]) return res.status(404).json({ error: '文章未找到' });
 
         const article = rows[0];
         const responseData = {
@@ -47,13 +47,17 @@ router.get('/', async (req, res) => {
         };
 
         if (redis) {
-            await redis.set(cacheKey, JSON.stringify(responseData));
+            try {
+                await redis.set(cacheKey, JSON.stringify(responseData));
+            } catch (err) {
+                console.error('缓存出错了：', err);
+            }
         }
 
         res.json(responseData);
     } catch (err) {
-        console.error(`Error fetching article ${slug}:`, err);
-        res.status(500).json({ error: 'Database error' });
+        console.error(`获取文章 ${slug} 失败:`, err);
+        res.status(500).json({ error: '数据库错误' });
     }
 });
 

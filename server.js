@@ -24,7 +24,7 @@ function verifySecret(req, res, next) {
     const ip = req.ip;
     // 检查是否被封锁
     if (failedAttempts[ip] && failedAttempts[ip].blockedUntil > Date.now()) {
-        return res.status(429).json({ error: 'Too many failed attempts, IP banned for ten years' });
+        return res.status(429).json({ error: '尝试次数过多，您的IP已被封锁十年！' });
     }
     if (!secret || secret !== API_SECRET) {
         if (!failedAttempts[ip]) {
@@ -36,7 +36,7 @@ function verifySecret(req, res, next) {
             failedAttempts[ip].blockedUntil = Date.now() + BLOCK_TIME;
             failedAttempts[ip].count = 0;
         }
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ error: '未授权' });
     }
     if (failedAttempts[ip]) {
         failedAttempts[ip].count = 0;
@@ -74,9 +74,9 @@ app.use('/api/talks/delete', verifySecret, deleteTalkRoute);
 (async () => {
     try {
         await db.init(); // 初始化数据库
-        app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}/`));
+        app.listen(PORT, () => console.log(`🚀 服务运行在 http://localhost:${PORT}/`));
     } catch (err) {
-        console.error("❌ Failed to init database:", err);
+        console.error("❌ 数据库初始化失败：", err);
         process.exit(1);
     }
 })();

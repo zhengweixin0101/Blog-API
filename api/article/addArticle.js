@@ -12,13 +12,13 @@ router.post('/', async (req, res) => {
         const { slug, title, content, tags, description, date, published } = req.body;
 
         if (!slug) {
-            return res.status(400).json({ error: 'slug is required' });
+            return res.status(400).json({ error: '需要 slug 字段' });
         }
 
         // 检查是否已存在
         const existing = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
         if (existing.rows.length > 0) {
-            return res.status(409).json({ error: 'Article with this slug already exists' });
+            return res.status(409).json({ error: '此 slug 的文章已存在' });
         }
 
         const result = await db.query(
@@ -41,25 +41,18 @@ router.post('/', async (req, res) => {
 
         if (redis) {
             try {
-                let cursor = '0';
-                do {
-                    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
-                    cursor = nextCursor;
-                    if (keys.length > 0) {
-                        const batchSize = 50;
-                        for (let i = 0; i < keys.length; i += batchSize) {
-                            await redis.del(...keys.slice(i, i + batchSize));
-                        }
-                    }
-                } while (cursor !== '0');
+                const keys = await redis.keys('posts:list*');
+                if (keys.length > 0) {
+                    await redis.del(...keys);
+                }
             } catch (err) {
-                console.error('Error deleting posts:list cache:', err);
+                console.error('删除缓存出错了：', err);
             }
         }
 
-        res.json({ message: 'Article created successfully', article: newArticle });
+        res.json({ message: '文章添加成功', article: newArticle });
     } catch (err) {
-        console.error('AddArticle Error:', err);
+        console.error('添加文章失败:', err);
         res.status(500).json({ error: err.message, stack: err.stack });
     }
 });

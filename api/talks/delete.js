@@ -9,7 +9,7 @@ const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 // 前端发送 JSON: { id: '说说id' }
 router.delete('/', async (req, res) => {
     const { id } = req.body;
-    if (!id) return res.status(400).json({ error: 'ID is required' });
+    if (!id) return res.status(400).json({ error: 'ID 是必须的' });
 
     try {
         const result = await db.query(
@@ -18,7 +18,7 @@ router.delete('/', async (req, res) => {
         );
 
         if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Talk not found' });
+            return res.status(404).json({ error: '说说未找到' });
         }
 
         if (redis) {
@@ -28,10 +28,10 @@ router.delete('/', async (req, res) => {
             }
         }
 
-        res.json({ message: `Talk '${id}' deleted successfully` });
+        res.json({ message: `说说 '${id}' 删除成功` });
     } catch (err) {
-        console.error(`Error deleting talk ${id}:`, err);
-        res.status(500).json({ error: 'Database error' });
+        console.error(`删除说说 ${id} 失败:`, err);
+        res.status(500).json({ error: '数据库错误' });
     }
 });
 
