@@ -6,9 +6,9 @@ const Redis = require('ioredis');
 const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 // 编辑说说接口
-// 前端发送 JSON: { id, content?, tags?, links?, imgs? }
+// 前端发送 JSON: { id, content?, location?, tags?, links?, imgs? }
 router.put('/', async (req, res) => {
-    const { id, content, tags, links, imgs } = req.body;
+    const { id, content, location, tags, links, imgs } = req.body;
     if (!id) return res.status(400).json({ error: '缺少 id' });
 
     try {
@@ -19,6 +19,10 @@ router.put('/', async (req, res) => {
         if (content !== undefined) {
             fields.push(`content = $${idx++}`);
             values.push(content);
+        }
+        if (location !== undefined) {
+            fields.push(`location = $${idx++}`);
+            values.push(location);
         }
         if (tags !== undefined) {
             fields.push(`tags = $${idx++}`);

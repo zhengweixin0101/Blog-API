@@ -47,6 +47,7 @@ async function init() {
         CREATE TABLE IF NOT EXISTS talks (
             id SERIAL PRIMARY KEY,
             content TEXT NOT NULL,
+            location TEXT,
             links JSONB DEFAULT '[]'::JSONB,
             imgs JSONB DEFAULT '[]'::JSONB,
             tags TEXT[] DEFAULT '{}',
