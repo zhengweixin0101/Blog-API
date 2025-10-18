@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
 
         if (redis) {
             try {
-                await redis.set(cacheKey, JSON.stringify(rows), 'EX', 7 * 24 * 60 * 60);
+                await redis.set(cacheKey, JSON.stringify(rows), 'EX', 30 * 24 * 60 * 60);
             } catch (err) {
                 console.error('缓存出错了：', err);
             }

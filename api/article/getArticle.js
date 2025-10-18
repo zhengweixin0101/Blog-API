@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
                     cacheKey,
                     JSON.stringify(responseData),
                     'EX',
-                    7 * 24 * 60 * 60
+                    30 * 24 * 60 * 60
                 );
             } catch (err) {
                 console.error('缓存出错：', err);
