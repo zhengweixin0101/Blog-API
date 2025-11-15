@@ -4,6 +4,6 @@ app = "blog-api-shinx"
 auto_start_machines = true
 auto_stop_machines = false
 force_https = true
-internal_port = 8_000
+internal_port = 3_000
 min_machines_running = 1
 processes = [ "app" ]
