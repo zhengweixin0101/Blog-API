@@ -48,6 +48,7 @@ function verifySecret(req, res, next) {
 // 路由
 const getArticleRoute = require('./api/article/getArticle');
 const getListRoute = require('./api/article/getList');
+const getAllRoute = require('./api/article/getAll');
 const deleteArticleRoute = require('./api/article/deleteArticle');
 const addArticleRoute = require('./api/article/addArticle');
 const editArticleRoute = require('./api/article/editArticle');
@@ -60,6 +61,7 @@ const deleteTalkRoute = require('./api/talks/delete');
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
+app.use('/api/article/all', verifySecret, getAllRoute);
 app.use('/api/article/add', verifySecret, addArticleRoute);
 app.use('/api/article/edit', verifySecret, editArticleRoute);
 app.use('/api/article/delete', verifySecret, deleteArticleRoute);
