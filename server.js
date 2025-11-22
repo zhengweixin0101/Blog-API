@@ -72,6 +72,11 @@ app.use('/api/talks/edit', verifySecret, editTalkRoute);
 app.use('/api/talks/add', verifySecret, addTalkRoute);
 app.use('/api/talks/delete', verifySecret, deleteTalkRoute);
 
+// 404重定向
+app.use((_req, res) => {
+    res.redirect('https://zhengweixin.top');
+});
+
 // 启动
 (async () => {
     try {
