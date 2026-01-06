@@ -72,9 +72,9 @@ app.use('/api/talks/edit', verifySecret, editTalkRoute);
 app.use('/api/talks/add', verifySecret, addTalkRoute);
 app.use('/api/talks/delete', verifySecret, deleteTalkRoute);
 
-// 404重定向
+// 404处理
 app.use((_req, res) => {
-    res.redirect('https://zhengweixin.top');
+    res.status(404).json({ error: '资源不存在' });
 });
 
 // 启动
