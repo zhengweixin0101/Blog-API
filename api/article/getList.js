@@ -26,11 +26,22 @@ router.get('/', async (req, res) => {
             return res.json(JSON.parse(cached));
         }
 
-        const defaultColumns = ['slug', 'title', 'description', 'tags', "TO_CHAR(date, 'YYYY-MM-DD') AS date", 'published'];
-        const columns = fields ? fields.map(f => {
-            if (f === 'date') return "TO_CHAR(date, 'YYYY-MM-DD') AS date";
-            return f;
-        }) : defaultColumns;
+        const FIELD_MAP = {
+            slug: 'slug',
+            title: 'title',
+            description: 'description',
+            tags: 'tags',
+            published: 'published',
+            date: "TO_CHAR(date, 'YYYY-MM-DD') AS date",
+        };
+
+        const allowedFields = Object.keys(FIELD_MAP);
+
+        const columns = fields
+            ? fields
+                .filter(f => allowedFields.includes(f))
+                .map(f => FIELD_MAP[f])
+            : Object.values(FIELD_MAP);
 
         const { rows } = await db.query(
             `SELECT ${columns.join(', ')}

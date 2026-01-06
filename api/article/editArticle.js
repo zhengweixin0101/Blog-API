@@ -62,7 +62,7 @@ router.put('/', async (req, res) => {
 
     } catch (err) {
         console.error('更新文章时遇到错误：', err);
-        res.status(500).json({ error: err.message, stack: err.stack });
+        res.status(500).json({ error: '服务器错误' });
     }
 });
 

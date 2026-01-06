@@ -56,7 +56,7 @@ router.put('/', async (req, res) => {
         res.json({ message: 'slug 更新成功', article: updatedArticle });
     } catch (err) {
         console.error('slug 更新失败：', err);
-        res.status(500).json({ error: err.message, stack: err.stack });
+        res.status(500).json({ error: '服务器错误' });
     }
 });
 

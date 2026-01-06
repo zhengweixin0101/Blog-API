@@ -53,7 +53,7 @@ router.post('/', async (req, res) => {
         res.json({ message: '文章添加成功', article: newArticle });
     } catch (err) {
         console.error('添加文章失败:', err);
-        res.status(500).json({ error: err.message, stack: err.stack });
+        res.status(500).json({ error: '服务器错误' });
     }
 });
 
