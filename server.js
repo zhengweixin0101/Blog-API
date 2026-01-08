@@ -11,37 +11,37 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 8000;
 
-// 读取密钥
-const API_SECRET = process.env.API_SECRET;
+async function verifyAuth(req, res, next) {
+    const authHeader = req.headers['authorization'];
 
-// 密钥验证
-const failedAttempts = {};
-const MAX_ATTEMPTS = 3;
-const BLOCK_TIME = 10 * 365 * 24 * 60 * 60 * 1000; // 封禁时间
+    if (!authHeader) {
+        return res.status(401).json({ error: '未提供认证信息' });
+    }
 
-function verifySecret(req, res, next) {
-    const secret = req.headers['x-api-key']; // 前端传 x-api-key
-    const ip = req.ip;
-    // 检查是否被封锁
-    if (failedAttempts[ip] && failedAttempts[ip].blockedUntil > Date.now()) {
-        return res.status(429).json({ error: '尝试次数过多，您的IP已被封锁十年！' });
+    // 支持不同大小写的 Bearer 前缀，并安全地提取 token
+    let token = authHeader;
+    if (/^Bearer\s+/i.test(authHeader)) {
+        token = authHeader.replace(/^Bearer\s+/i, '');
     }
-    if (!secret || secret !== API_SECRET) {
-        if (!failedAttempts[ip]) {
-            failedAttempts[ip] = { count: 1, blockedUntil: 0 };
-        } else {
-            failedAttempts[ip].count++;
-        }
-        if (failedAttempts[ip].count >= MAX_ATTEMPTS) {
-            failedAttempts[ip].blockedUntil = Date.now() + BLOCK_TIME;
-            failedAttempts[ip].count = 0;
-        }
-        return res.status(401).json({ error: '未授权' });
+
+    const result = await db.query(
+        'SELECT id, username, token, token_expires_at FROM admin WHERE token = $1',
+        [token]
+    );
+
+    if (result.rows.length === 0) {
+        return res.status(401).json({ error: 'token无效' });
     }
-    if (failedAttempts[ip]) {
-        failedAttempts[ip].count = 0;
-        failedAttempts[ip].blockedUntil = 0;
+
+    const admin = result.rows[0];
+
+    // 处理可能为 null/undefined/字符串/Date 的过期字段
+    const expiresAt = admin.token_expires_at ? new Date(admin.token_expires_at) : null;
+    if (!expiresAt || isNaN(expiresAt.getTime()) || expiresAt < new Date()) {
+        return res.status(401).json({ error: 'token已过期' });
     }
+
+    req.user = { id: admin.id, username: admin.username };
     next();
 }
 
@@ -59,22 +59,26 @@ const editTalkRoute = require('./api/talks/edit');
 const addTalkRoute = require('./api/talks/add');
 const deleteTalkRoute = require('./api/talks/delete');
 
+const loginRoute = require('./api/system/login');
+
+app.use('/api/system/login', loginRoute);
+
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
-app.use('/api/article/all', verifySecret, getAllRoute);
-app.use('/api/article/add', verifySecret, addArticleRoute);
-app.use('/api/article/edit', verifySecret, editArticleRoute);
-app.use('/api/article/delete', verifySecret, deleteArticleRoute);
-app.use('/api/article/edit-slug', verifySecret, editSlugRoute);
+app.use('/api/article/all', verifyAuth, getAllRoute);
+app.use('/api/article/add', verifyAuth, addArticleRoute);
+app.use('/api/article/edit', verifyAuth, editArticleRoute);
+app.use('/api/article/delete', verifyAuth, deleteArticleRoute);
+app.use('/api/article/edit-slug', verifyAuth, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
-app.use('/api/talks/edit', verifySecret, editTalkRoute);
-app.use('/api/talks/add', verifySecret, addTalkRoute);
-app.use('/api/talks/delete', verifySecret, deleteTalkRoute);
+app.use('/api/talks/edit', verifyAuth, editTalkRoute);
+app.use('/api/talks/add', verifyAuth, addTalkRoute);
+app.use('/api/talks/delete', verifyAuth, deleteTalkRoute);
 
 // 404处理
 app.use((_req, res) => {
-    res.status(404).json({ error: '资源不存在' });
+    res.status(404).json({ error: '不存在' });
 });
 
 // 启动

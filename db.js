@@ -23,7 +23,7 @@ async function init() {
     const checkTablesQuery = `
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks');
+        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'admin');
     `;
     const result = await pool.query(checkTablesQuery);
     const existingTables = result.rows.map(r => r.table_name);
@@ -55,6 +55,16 @@ async function init() {
         );
     `;
 
+    const createAdminTableQuery = `
+        CREATE TABLE IF NOT EXISTS admin (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            token TEXT,
+            token_expires_at TIMESTAMP
+        );
+    `;
+
     const newlyCreated = [];
 
     if (!existingTables.includes('articles')) {
@@ -65,6 +75,11 @@ async function init() {
     if (!existingTables.includes('talks')) {
         await pool.query(createMemosTableQuery);
         newlyCreated.push('talks');
+    }
+
+    if (!existingTables.includes('admin')) {
+        await pool.query(createAdminTableQuery);
+        newlyCreated.push('admin');
     }
 
     if (newlyCreated.length > 0) {

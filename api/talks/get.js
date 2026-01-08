@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
             result = await db.query(baseQuery, params);
         } else if ((page && !pageSize) || (!page && pageSize)) {
             return res.status(400).json({
-                message: '分页参数不完整，必须同时提供 page 和 pageSize'
+                error: '分页参数不完整，必须同时提供 page 和 pageSize'
             });
         } else {
             page = Number(page);
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
 
             if (isNaN(page) || isNaN(pageSize) || page <= 0 || pageSize <= 0) {
                 return res.status(400).json({
-                    message: '分页参数必须为正整数'
+                    error: '分页参数必须为正整数'
                 });
             }
 
@@ -101,7 +101,7 @@ router.get('/', async (req, res) => {
         res.json(responseData);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: '获取说说失败' });
+        res.status(500).json({ error: '服务器错误' });
     }
 });
 

@@ -52,6 +52,7 @@ router.get('/', async (req, res) => {
 
 		const responseData = {
 			data: result.rows,
+			allTags: [],
 			page: page ? Number(page) : null,
 			pageSize: pageSize ? Number(pageSize) : null,
 			total,

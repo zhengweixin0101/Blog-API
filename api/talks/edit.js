@@ -62,10 +62,10 @@ router.put('/', async (req, res) => {
             }
         }
 
-        res.json({ success: true, data: result.rows[0] });
+        res.json({ message: '说说更新成功', talk: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: '数据库错误' });
+        res.status(500).json({ error: '服务器错误' });
     }
 });
 
