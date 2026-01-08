@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('../../db.js');
+const turnstile = require('../../middleware/turnstile');
 
 const router = express.Router();
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24小时
@@ -19,6 +20,8 @@ router.post('/', async (req, res) => {
         const { username, password } = req.body;
 
         if (!username || !password) {
+            // 缺少参数视为一次失败，要求后续请求进行人机验证
+            try { turnstile.setNeedVerification(true); } catch (e) {}
             return res.status(400).json({ error: '用户名和密码不能为空' });
         }
 
@@ -32,6 +35,7 @@ router.post('/', async (req, res) => {
             const adminCount = parseInt(adminCountResult.rows[0].count, 10);
 
             if (adminCount > 0) {
+                try { turnstile.setNeedVerification(true); } catch (e) {}
                 return res.status(403).json({ error: '已存在管理员账号，无法创建新账号' });
             }
 
@@ -45,6 +49,8 @@ router.post('/', async (req, res) => {
                 [username, hash, token, tokenExpiresAt]
             );
 
+            // 创建账号成功，清除人机验证标记
+            try { turnstile.clearVerification(); } catch (e) {}
             return res.json({
                 message: '账号创建成功并已登录',
                 token,
@@ -56,6 +62,8 @@ router.post('/', async (req, res) => {
         const isValid = await bcrypt.compare(password, admin.password);
 
         if (!isValid) {
+            // 密码错误，要求后续请求进行人机验证
+            try { turnstile.setNeedVerification(true); } catch (e) {}
             return res.status(401).json({ error: '用户名或密码错误' });
         }
 
@@ -68,6 +76,8 @@ router.post('/', async (req, res) => {
             [token, tokenExpiresAt, admin.id]
         );
 
+        // 登录成功，清除人机验证标记
+        try { turnstile.clearVerification(); } catch (e) {}
         res.json({
             message: '登录成功',
             token,
