@@ -11,39 +11,9 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 8000;
 
-async function verifyAuth(req, res, next) {
-    const authHeader = req.headers['authorization'];
-
-    if (!authHeader) {
-        return res.status(401).json({ error: '未提供认证信息' });
-    }
-
-    // 支持不同大小写的 Bearer 前缀，并安全地提取 token
-    let token = authHeader;
-    if (/^Bearer\s+/i.test(authHeader)) {
-        token = authHeader.replace(/^Bearer\s+/i, '');
-    }
-
-    const result = await db.query(
-        'SELECT id, username, token, token_expires_at FROM admin WHERE token = $1',
-        [token]
-    );
-
-    if (result.rows.length === 0) {
-        return res.status(401).json({ error: 'token无效' });
-    }
-
-    const admin = result.rows[0];
-
-    // 处理可能为 null/undefined/字符串/Date 的过期字段
-    const expiresAt = admin.token_expires_at ? new Date(admin.token_expires_at) : null;
-    if (!expiresAt || isNaN(expiresAt.getTime()) || expiresAt < new Date()) {
-        return res.status(401).json({ error: 'token已过期' });
-    }
-
-    req.user = { id: admin.id, username: admin.username };
-    next();
-}
+// 中间件
+const verifyAuth = require('./middleware/auth');
+const verifyTurnstile = require('./middleware/turnstile');
 
 // 路由
 const getArticleRoute = require('./api/article/getArticle');
@@ -61,20 +31,20 @@ const deleteTalkRoute = require('./api/talks/delete');
 
 const loginRoute = require('./api/system/login');
 
-app.use('/api/system/login', loginRoute);
+app.use('/api/system/login', verifyTurnstile, loginRoute);
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
 app.use('/api/article/all', verifyAuth, getAllRoute);
 app.use('/api/article/add', verifyAuth, addArticleRoute);
-app.use('/api/article/edit', verifyAuth, editArticleRoute);
-app.use('/api/article/delete', verifyAuth, deleteArticleRoute);
-app.use('/api/article/edit-slug', verifyAuth, editSlugRoute);
+app.use('/api/article/edit', verifyAuth, verifyTurnstile, editArticleRoute);
+app.use('/api/article/delete', verifyAuth, verifyTurnstile, deleteArticleRoute);
+app.use('/api/article/edit-slug', verifyAuth, verifyTurnstile, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
-app.use('/api/talks/edit', verifyAuth, editTalkRoute);
+app.use('/api/talks/edit', verifyAuth, verifyTurnstile, editTalkRoute);
 app.use('/api/talks/add', verifyAuth, addTalkRoute);
-app.use('/api/talks/delete', verifyAuth, deleteTalkRoute);
+app.use('/api/talks/delete', verifyAuth, verifyTurnstile, deleteTalkRoute);
 
 // 404处理
 app.use((_req, res) => {
