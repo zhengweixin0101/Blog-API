@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
-const Redis = require('ioredis');
 
-const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
+const redis = db.redis;
 
 // 修改文章 slug 接口
 // 前端发送 JSON: { oldSlug, newSlug }
@@ -51,6 +50,7 @@ router.put('/', async (req, res) => {
                 console.error('清除文章列表缓存时出错：', err);
             }
             await redis.del(`post:${oldSlug}`);
+            await redis.del(`post:html:${oldSlug}`);
         }
 
         res.json({ message: 'slug 更新成功', article: updatedArticle });

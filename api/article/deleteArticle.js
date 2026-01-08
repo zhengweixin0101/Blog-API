@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
-const Redis = require('ioredis');
 
-const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
+const redis = db.redis;
 
 // 删除文章接口
 // 前端发送 JSON: { slug: '文章slug' }
@@ -24,6 +23,7 @@ router.delete('/', async (req, res) => {
         const articleSlug = result.rows[0].slug;
         if (redis) {
             await redis.del(`post:${articleSlug}`);
+            await redis.del(`post:html:${articleSlug}`);
             try {
                 let cursor = '0';
                 do {

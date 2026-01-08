@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
-const Redis = require('ioredis');
 const { marked } = require('marked');
 
-const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
+const redis = db.redis;
 
 // 获取文章内容接口
 // 直接请求 ?slug={slug}

@@ -1,9 +1,8 @@
 const express = require('express');
 const db = require('../../db.js');
 const router = express.Router();
-const Redis = require('ioredis');
 
-const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
+const redis = db.redis;
 
 // 添加说说接口
 // 前端发送 JSON: { content, location?, links?, imgs?, tags? }

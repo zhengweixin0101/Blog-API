@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
-const Redis = require('ioredis');
 
-const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
+const redis = db.redis;
 
 // 获取文章列表接口
 // 直接请求，默认只返回已发布文章
