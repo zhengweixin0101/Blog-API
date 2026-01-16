@@ -19,6 +19,16 @@ router.post('/', async (req, res) => {
     try {
         const { username, password } = req.body;
 
+        // 若服务端已标记需要人机验证，且本次请求未提供 turnstile token，则直接返回提示
+        const providedToken = req.body.turnstileToken || req.headers['x-turnstile-token'];
+        try {
+            if (turnstile.isNeedVerification && turnstile.isNeedVerification() && !providedToken) {
+                return res.status(400).json({ error: '请先进行人机验证', needTurnstile: true });
+            }
+        } catch (e) {
+            // 忽略检查异常，继续正常流程
+        }
+
         if (!username || !password) {
             // 缺少参数视为一次失败，要求后续请求进行人机验证
             try { turnstile.setNeedVerification(true); } catch (e) {}

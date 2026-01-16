@@ -56,7 +56,8 @@ async function requireVerification(req, res, next) {
             });
         }
 
-        // 人机验证成功，继续处理请求
+        // 人机验证成功，清除标记后继续处理请求
+        needVerification = false;
         next();
     } catch (error) {
         console.error('Turnstile 验证请求失败:', error.message);
@@ -75,3 +76,5 @@ module.exports.setNeedVerification = (value) => {
 module.exports.clearVerification = () => {
     needVerification = false;
 };
+// 导出检查函数，供其他路由在需要时短路返回
+module.exports.isNeedVerification = () => needVerification;

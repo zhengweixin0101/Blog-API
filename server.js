@@ -36,14 +36,14 @@ app.use('/api/system/login', verifyTurnstile, loginRoute);
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
 app.use('/api/article/all', verifyAuth, getAllRoute);
-app.use('/api/article/add', verifyAuth, addArticleRoute);
+app.use('/api/article/add', verifyAuth, verifyTurnstile, addArticleRoute);
 app.use('/api/article/edit', verifyAuth, verifyTurnstile, editArticleRoute);
 app.use('/api/article/delete', verifyAuth, verifyTurnstile, deleteArticleRoute);
 app.use('/api/article/edit-slug', verifyAuth, verifyTurnstile, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
 app.use('/api/talks/edit', verifyAuth, verifyTurnstile, editTalkRoute);
-app.use('/api/talks/add', verifyAuth, addTalkRoute);
+app.use('/api/talks/add', verifyAuth, verifyTurnstile, addTalkRoute);
 app.use('/api/talks/delete', verifyAuth, verifyTurnstile, deleteTalkRoute);
 
 // 404处理
