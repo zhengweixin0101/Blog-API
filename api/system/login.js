@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
 
             if (adminCount > 0) {
                 try { turnstile.setNeedVerification(true); } catch (e) {}
-                return res.status(403).json({ error: '账号不存在，请检查后重试' });
+                return res.status(403).json({ error: '用户名或密码错误' });
             }
 
             const hash = await bcrypt.hash(password, 10);
@@ -74,7 +74,7 @@ router.post('/', async (req, res) => {
         if (!isValid) {
             // 密码错误，要求后续请求进行人机验证
             try { turnstile.setNeedVerification(true); } catch (e) {}
-            return res.status(401).json({ error: '密码错误，账号不存在，请检查后重试' });
+            return res.status(401).json({ error: '用户名或密码错误' });
         }
 
         const token = generateToken();
