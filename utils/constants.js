@@ -92,6 +92,10 @@ const DBIndexes = {
     ARTICLES_SLUG: 'idx_articles_slug',
     ARTICLES_PUBLISHED_DATE: 'idx_articles_published_date',
 
+    // talks 表索引
+    TALKS_CREATED_AT: 'idx_talks_created_at',
+    TALKS_TAGS: 'idx_talks_tags',
+
     // admin 表索引
     ADMIN_TOKEN: 'idx_admin_token'
 };

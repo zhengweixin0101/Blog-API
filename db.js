@@ -111,6 +111,9 @@ async function init() {
             tags TEXT[] DEFAULT '{}',
             created_at TIMESTAMP DEFAULT NOW()
         );
+
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.TALKS_CREATED_AT} ON talks(created_at DESC);
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.TALKS_TAGS} ON talks USING GIN(tags);
     `;
 
     const createAdminTableQuery = `
