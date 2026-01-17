@@ -41,7 +41,7 @@ router.post('/', asyncHandler(async (req, res) => {
         res.json({
             success: true,
             message: '文章添加成功',
-            data: { article: newArticle }
+            article: newArticle
         });
 }));
 

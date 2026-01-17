@@ -33,7 +33,7 @@ router.post('/', asyncHandler(async (req, res) => {
     res.json({
         success: true,
         message: '说说添加成功',
-        data: { talk: result.rows[0] }
+        talk: result.rows[0]
     });
 }));
 

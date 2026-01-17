@@ -60,10 +60,8 @@ router.post('/', asyncHandler(async (req, res) => {
         return res.json({
             success: true,
             message: '账号创建成功并已登录',
-            data: {
-                token,
-                expiresIn: TOKEN_EXPIRY
-            }
+            token,
+            expiresIn: TOKEN_EXPIRY
         });
     }
 
@@ -92,10 +90,8 @@ router.post('/', asyncHandler(async (req, res) => {
     res.json({
         success: true,
         message: '登录成功',
-        data: {
-            token,
-            expiresIn: TOKEN_EXPIRY
-        }
+        token,
+        expiresIn: TOKEN_EXPIRY
     });
 }));
 

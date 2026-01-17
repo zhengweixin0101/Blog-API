@@ -63,7 +63,7 @@ router.get('/', asyncHandler(async (req, res) => {
 	res.json({
 		success: true,
 		message: '获取成功',
-		data: responseData
+		...responseData
 	});
 }));
 
