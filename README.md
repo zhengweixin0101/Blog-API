@@ -80,10 +80,13 @@
 **查询参数**:
 - `posts` - 可选，`all` 表示返回所有文章（包括未发布），默认只返回已发布
 - `fields` - 可选，指定返回字段，如 `slug,title,date`
+- `page` - 可选，页码（需与 pageSize 同时使用）
+- `pageSize` - 可选，每页数量（需与 page 同时使用）
 
 **示例请求**:
 ```
 GET /api/article/list?posts=all&fields=slug,title,date
+GET /api/article/list?page=1&pageSize=10
 ```
 
 **响应示例**:
@@ -143,6 +146,10 @@ GET /api/article/get?slug=my-first-post&type=html
 **查询参数**:
 - `page` - 可选，页码
 - `pageSize` - 可选，每页数量
+
+**说明**:
+- 当不传 `page` 和 `pageSize` 时，返回所有文章（不分页）
+- 当传入 `page` 和 `pageSize` 时，返回分页数据
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -329,6 +336,10 @@ GET /api/article/all?page=1&pageSize=10
 - `pageSize` - 可选，每页数量
 - `tag` - 可选，按标签筛选
 - `sort` - 可选，`asc` 或 `desc`，默认 `desc`
+
+**说明**:
+- 当不传 `page` 和 `pageSize` 时，返回所有说说（不分页）
+- 当传入 `page` 和 `pageSize` 时，返回分页数据
 
 **示例请求**:
 ```
