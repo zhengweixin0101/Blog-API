@@ -24,6 +24,7 @@ const PORT = process.env.PORT || 8000;
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
 const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, talkSchema, editTalkSchema, deleteTalkSchema } = require('./middleware/validate');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // 路由
 const getArticleRoute = require('./api/article/getArticle');
@@ -56,10 +57,11 @@ app.use('/api/talks/edit', verifyAuth, validate(editTalkSchema), verifyTurnstile
 app.use('/api/talks/add', verifyAuth, validate(talkSchema), verifyTurnstile, addTalkRoute);
 app.use('/api/talks/delete', verifyAuth, validate(deleteTalkSchema), verifyTurnstile, deleteTalkRoute);
 
-// 404处理
-app.use((_req, res) => {
-    res.status(404).json({ error: '不存在' });
-});
+// 404 处理
+app.use(notFoundHandler);
+
+// 全局错误处理（必须放在最后）
+app.use(errorHandler);
 
 // 启动
 (async () => {
@@ -69,7 +71,7 @@ app.use((_req, res) => {
 
         // 优雅关闭处理
         const gracefulShutdown = async (signal) => {
-            console.log(`\n⚠️  收到 ${signal} 信号，开始关闭...`);
+            console.log(`\n⚠️  收到 ${signal} 信号，开始关闭服务...`);
 
             // 停止接受新连接
             server.close(async (err) => {

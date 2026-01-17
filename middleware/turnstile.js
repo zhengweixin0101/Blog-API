@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { asyncHandler } = require('./errorHandler');
 
 const secretKey = process.env.TURNSTILE_SECRET_KEY;
 const turnstileEnabled = !!secretKey;
@@ -48,41 +49,29 @@ async function verifyTurnstileToken(token) {
         return { success: true };
     }
 
-    try {
-        const response = await axios.post(
-            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-            new URLSearchParams({
-                secret: secretKey,
-                response: token
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
+    const response = await axios.post(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        new URLSearchParams({
+            secret: secretKey,
+            response: token
+        }),
+        {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
-        );
-
-        if (!response.data.success) {
-            return {
-                success: false,
-                errorCodes: response.data['error-codes'] || ['未知错误']
-            };
         }
+    );
 
-        // 验证成功，清除标记
-        clearVerification();
-        return { success: true };
-    } catch (error) {
-        console.error('Turnstile 验证请求失败:', error.message);
-        if (error.response) {
-            console.error('响应状态:', error.response.status);
-            console.error('响应数据:', error.response.data);
-        }
+    if (!response.data.success) {
         return {
             success: false,
-            errorCodes: ['验证服务不可用']
+            errorCodes: response.data['error-codes'] || ['未知错误']
         };
     }
+
+    // 验证成功，清除标记
+    clearVerification();
+    return { success: true };
 }
 
 async function verifyTurnstile(req, res, next) {
@@ -116,6 +105,8 @@ async function verifyTurnstile(req, res, next) {
     // 首次访问或标记已清除，直接放行
     next();
 }
+
+module.exports = asyncHandler(verifyTurnstile);
 
 module.exports = verifyTurnstile;
 module.exports.isNeedVerification = isNeedVerification;
