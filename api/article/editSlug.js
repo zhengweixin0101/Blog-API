@@ -35,6 +35,7 @@ router.put('/', async (req, res) => {
 
         await clearPostListCache();
         await clearPostCache(oldSlug);
+        await clearPostCache(newSlug);
 
         res.json({ message: 'slug 更新成功', article: updatedArticle });
     } catch (err) {

@@ -28,8 +28,24 @@ if (process.env.REDIS_URL) {
 
 async function init() {
     if (redis) {
-        await redis.flushall();
-        console.log('🧹 Redis 缓存已清空');
+        let cursor = '0';
+        do {
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:*', 'COUNT', 100);
+            cursor = nextCursor;
+            if (keys.length > 0) {
+                await redis.del(keys);
+            }
+        } while (cursor !== '0');
+
+        cursor = '0';
+        do {
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'talks:*', 'COUNT', 100);
+            cursor = nextCursor;
+            if (keys.length > 0) {
+                await redis.del(keys);
+            }
+        } while (cursor !== '0');
+        console.log('🧹 缓存已清除');
     }
 
     const checkTablesQuery = `

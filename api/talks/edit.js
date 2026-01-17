@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
-
-const redis = db.redis;
+const { clearTalksCache } = require('../../utils/cache');
 
 // 编辑说说接口
 // 前端发送 JSON: { id, content?, location?, tags?, links?, imgs? }
@@ -54,12 +53,7 @@ router.put('/', async (req, res) => {
             return res.status(404).json({ error: '说说不存在' });
         }
 
-        if (redis) {
-            const keys = await redis.keys('talks:*');
-            if (keys.length > 0) {
-                await redis.del(keys);
-            }
-        }
+        await clearTalksCache();
 
         res.json({ message: '说说更新成功', talk: result.rows[0] });
     } catch (err) {

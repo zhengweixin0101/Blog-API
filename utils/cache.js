@@ -42,7 +42,32 @@ async function clearPostCache(slug) {
     }
 }
 
+/**
+ * 清除所有说说相关的缓存
+ * 匹配模式：talks:*
+ */
+async function clearTalksCache() {
+    if (!redis) return;
+
+    try {
+        let cursor = '0';
+        do {
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'talks:*', 'COUNT', 100);
+            cursor = nextCursor;
+            if (keys.length > 0) {
+                const batchSize = 50;
+                for (let i = 0; i < keys.length; i += batchSize) {
+                    await redis.del(...keys.slice(i, i + batchSize));
+                }
+            }
+        } while (cursor !== '0');
+    } catch (err) {
+        console.error('清除说说缓存时出错：', err);
+    }
+}
+
 module.exports = {
     clearPostListCache,
-    clearPostCache
+    clearPostCache,
+    clearTalksCache
 };

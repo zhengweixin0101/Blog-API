@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
-
-const redis = db.redis;
+const { clearTalksCache } = require('../../utils/cache');
 
 // 删除说说接口
 // 前端发送 JSON: { id: '说说id' }
@@ -19,12 +18,7 @@ router.delete('/', async (req, res) => {
             return res.status(404).json({ error: '说说未找到' });
         }
 
-        if (redis) {
-            const keys = await redis.keys('talks:*');
-            if (keys.length > 0) {
-                await redis.del(keys);
-            }
-        }
+        await clearTalksCache();
 
         res.json({ message: `说说 '${id}' 删除成功` });
     } catch (err) {
