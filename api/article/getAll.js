@@ -5,10 +5,20 @@ const { asyncHandler } = require('../../middleware/errorHandler');
 
 /**
  * GET /api/article/all - 获取所有文章（包含 content）
- * Query: ?page=<page>&pageSize=<pageSize>
+ * Query: ?page=<page>&pageSize=<pageSize>&sort=asc|desc (默认 desc)
  */
 router.get('/', asyncHandler(async (req, res) => {
-	let { page, pageSize } = req.query;
+	let { page, pageSize, sort = 'desc' } = req.query;
+
+	// 验证排序参数
+	const validSortValues = ['asc', 'desc'];
+	if (!validSortValues.includes(sort.toLowerCase())) {
+		const err = new Error('排序参数只能是 asc 或 desc');
+		err.status = 400;
+		throw err;
+	}
+
+	const sortOrder = sort.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
 	let result;
 	if (!page && !pageSize) {
@@ -17,7 +27,7 @@ router.get('/', asyncHandler(async (req, res) => {
 				TO_CHAR(date, 'YYYY-MM-DD') AS date,
 				published
 			 FROM articles
-			 ORDER BY date DESC`
+			 ORDER BY date ${sortOrder}`
 		);
 		result = { rows };
 	} else if ((page && !pageSize) || (!page && pageSize)) {
@@ -40,7 +50,7 @@ router.get('/', asyncHandler(async (req, res) => {
 				TO_CHAR(date, 'YYYY-MM-DD') AS date,
 				published
 			 FROM articles
-			 ORDER BY date DESC
+			 ORDER BY date ${sortOrder}
 			 LIMIT $1 OFFSET $2`,
 			[pageSize, offset]
 		);

@@ -19,13 +19,21 @@ const FIELD_MAP = {
 
 /**
  * GET /api/article/list - 获取文章列表
- * Query: ?posts=all&fields=slug,title,date&page=<page>&pageSize=<pageSize>
+ * Query: ?posts=all&fields=slug,title,date&page=<page>&pageSize=<pageSize>&sort=asc|desc (默认 desc)
  */
 router.get('/', asyncHandler(async (req, res) => {
     const all = req.query.posts === 'all';
     const fieldsQuery = req.query.fields;
     const fields = fieldsQuery ? fieldsQuery.split(',').map(f => f.trim()) : null;
-    const { page, pageSize } = req.query;
+    const { page, pageSize, sort = 'desc' } = req.query;
+
+    // 验证排序参数
+    const validSortValues = ['asc', 'desc'];
+    if (!validSortValues.includes(sort.toLowerCase())) {
+        const err = new Error('排序参数只能是 asc 或 desc');
+        err.status = 400;
+        throw err;
+    }
 
     const cacheKey = CacheKeys.postListKey(all, fields, page, pageSize);
 
@@ -59,7 +67,8 @@ router.get('/', asyncHandler(async (req, res) => {
         query += ` ${whereClause}`;
     }
 
-    query += ` ORDER BY date DESC`;
+    const sortOrder = sort.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    query += ` ORDER BY date ${sortOrder}`;
 
     // 分页处理
     if (page && pageSize) {

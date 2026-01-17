@@ -82,11 +82,22 @@
 - `fields` - 可选，指定返回字段，如 `slug,title,date`
 - `page` - 可选，页码（需与 pageSize 同时使用）
 - `pageSize` - 可选，每页数量（需与 page 同时使用）
+- `sort` - 可选，排序方式，`asc` 或 `desc`，默认 `desc`
+
+**说明**:
+- 当不传 `page` 和 `pageSize` 时，返回所有匹配的文章（不分页）
+- 当传入 `page` 和 `pageSize` 时，返回分页数据
+- `fields` 参数指定的字段必须是以下之一：`slug`, `title`, `description`, `tags`, `published`, `date`
+
+**错误响应**:
+- `400` - 排序参数无效（只能为 asc 或 desc）
+- `400` - 分页参数不完整
 
 **示例请求**:
 ```
 GET /api/article/list?posts=all&fields=slug,title,date
 GET /api/article/list?page=1&pageSize=10
+GET /api/article/list?sort=asc
 ```
 
 **响应示例**:
@@ -144,12 +155,17 @@ GET /api/article/get?slug=my-first-post&type=html
 获取所有文章（包含内容，需认证）
 
 **查询参数**:
-- `page` - 可选，页码
-- `pageSize` - 可选，每页数量
+- `page` - 可选，页码（需与 pageSize 同时使用）
+- `pageSize` - 可选，每页数量（需与 page 同时使用）
+- `sort` - 可选，排序方式，`asc` 或 `desc`，默认 `desc`
 
 **说明**:
 - 当不传 `page` 和 `pageSize` 时，返回所有文章（不分页）
 - 当传入 `page` 和 `pageSize` 时，返回分页数据
+
+**错误响应**:
+- `400` - 排序参数无效（只能为 asc 或 desc）
+- `400` - 分页参数不完整
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -157,6 +173,7 @@ GET /api/article/get?slug=my-first-post&type=html
 **示例请求**:
 ```
 GET /api/article/all?page=1&pageSize=10
+GET /api/article/all?sort=asc
 ```
 
 **响应示例**:
@@ -332,18 +349,22 @@ GET /api/article/all?page=1&pageSize=10
 获取说说列表
 
 **查询参数**:
-- `page` - 可选，页码
-- `pageSize` - 可选，每页数量
+- `page` - 可选，页码（需与 pageSize 同时使用）
+- `pageSize` - 可选，每页数量（需与 page 同时使用）
 - `tag` - 可选，按标签筛选
-- `sort` - 可选，`asc` 或 `desc`，默认 `desc`
+- `sort` - 可选，排序方式，`asc` 或 `desc`，默认 `desc`
 
 **说明**:
 - 当不传 `page` 和 `pageSize` 时，返回所有说说（不分页）
 - 当传入 `page` 和 `pageSize` 时，返回分页数据
 
+**错误响应**:
+- `400` - 排序参数无效（只能为 asc 或 desc）
+
 **示例请求**:
 ```
 GET /api/talks/get?page=1&pageSize=20&tag=技术&sort=desc
+GET /api/talks/get?sort=asc
 ```
 
 **响应示例**:

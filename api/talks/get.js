@@ -14,6 +14,14 @@ const redis = db.redis;
 router.get('/', asyncHandler(async (req, res) => {
     let { page, pageSize, tag, sort = 'desc' } = req.query;
 
+    // 验证排序参数
+    const validSortValues = ['asc', 'desc'];
+    if (!validSortValues.includes(sort.toLowerCase())) {
+        const err = new Error('排序参数只能是 asc 或 desc');
+        err.status = 400;
+        throw err;
+    }
+
     // 转换为数字或 null
     page = page ? Number(page) : null;
     pageSize = pageSize ? Number(pageSize) : null;
