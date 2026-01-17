@@ -5,6 +5,15 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+// 验证环境变量
+const requiredEnvVars = ['DATABASE_URL'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+    console.error(`❌ 缺少必需的环境变量: ${missingEnvVars.join(', ')}`);
+    process.exit(1);
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

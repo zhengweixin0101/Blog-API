@@ -4,6 +4,16 @@ const db = require('../../db');
 
 const redis = db.redis;
 
+// 文章字段映射配置
+const FIELD_MAP = {
+    slug: 'slug',
+    title: 'title',
+    description: 'description',
+    tags: 'tags',
+    published: 'published',
+    date: "TO_CHAR(date, 'YYYY-MM-DD') AS date",
+};
+
 // 获取文章列表接口
 // 直接请求，默认只返回已发布文章
 // ?posts=all 返回全部文章
@@ -24,15 +34,6 @@ router.get('/', async (req, res) => {
         if (cached) {
             return res.json(JSON.parse(cached));
         }
-
-        const FIELD_MAP = {
-            slug: 'slug',
-            title: 'title',
-            description: 'description',
-            tags: 'tags',
-            published: 'published',
-            date: "TO_CHAR(date, 'YYYY-MM-DD') AS date",
-        };
 
         const allowedFields = Object.keys(FIELD_MAP);
 
