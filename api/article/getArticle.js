@@ -22,7 +22,14 @@ router.get('/', asyncHandler(async (req, res) => {
 
     if (redis) {
         const cached = await redis.get(cacheKey);
-        if (cached) return res.json(JSON.parse(cached));
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            return res.json({
+                success: true,
+                message: '获取成功',
+                data: parsed
+            });
+        }
     }
 
     const { rows } = await db.query(
@@ -68,7 +75,11 @@ router.get('/', asyncHandler(async (req, res) => {
         );
     }
 
-    res.json(responseData);
+    res.json({
+        success: true,
+        message: '获取成功',
+        data: responseData
+    });
 }));
 
 module.exports = router;

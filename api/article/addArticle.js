@@ -35,10 +35,14 @@ router.post('/', asyncHandler(async (req, res) => {
         ]
     );
 
-    const newArticle = result.rows[0];
-    await clearPostListCache();
+        const newArticle = result.rows[0];
+        await clearPostListCache();
 
-    res.json({ message: '文章添加成功', article: newArticle });
+        res.json({
+            success: true,
+            message: '文章添加成功',
+            data: { article: newArticle }
+        });
 }));
 
 module.exports = router;

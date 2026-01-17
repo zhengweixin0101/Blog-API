@@ -78,6 +78,7 @@ function validate(schema, property = 'body') {
 
         if (error) {
             return res.status(400).json({
+                success: false,
                 error: '缺少必须的请求参数',
                 details: error.details.map(detail => ({
                     field: detail.path.join('.'),

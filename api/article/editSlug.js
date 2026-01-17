@@ -39,7 +39,11 @@ router.put('/', asyncHandler(async (req, res) => {
     await clearPostCache(oldSlug);
     await clearPostCache(newSlug);
 
-    res.json({ message: 'slug 更新成功', article: updatedArticle });
+    res.json({
+        success: true,
+        message: 'slug 更新成功',
+        data: { article: updatedArticle }
+    });
 }));
 
 module.exports = router;

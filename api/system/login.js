@@ -22,7 +22,11 @@ router.post('/', asyncHandler(async (req, res) => {
 
     // 若服务端已标记需要人机验证，且本次请求未提供 turnstile token，则直接返回提示
     if (turnstile.shouldRequireVerification(providedToken)) {
-        return res.status(400).json({ error: '请先进行人机验证', needTurnstile: true });
+        return res.status(400).json({
+            success: false,
+            error: '请先进行人机验证',
+            needTurnstile: true
+        });
     }
 
     const result = await db.query(
@@ -54,9 +58,12 @@ router.post('/', asyncHandler(async (req, res) => {
         // 创建账号成功，清除人机验证标记
         turnstile.clearVerification();
         return res.json({
+            success: true,
             message: '账号创建成功并已登录',
-            token,
-            expiresIn: TOKEN_EXPIRY
+            data: {
+                token,
+                expiresIn: TOKEN_EXPIRY
+            }
         });
     }
 
@@ -83,9 +90,12 @@ router.post('/', asyncHandler(async (req, res) => {
     // 登录成功，清除人机验证标记
     turnstile.clearVerification();
     res.json({
+        success: true,
         message: '登录成功',
-        token,
-        expiresIn: TOKEN_EXPIRY
+        data: {
+            token,
+            expiresIn: TOKEN_EXPIRY
+        }
     });
 }));
 

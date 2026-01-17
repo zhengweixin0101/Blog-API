@@ -21,6 +21,7 @@ function errorHandler(err, req, res, next) {
         if (err.code === '23505') {
             // 唯一约束违反
             return res.status(409).json({
+                success: false,
                 error: '数据冲突，记录已存在',
                 detail: err.constraint
             });
@@ -28,18 +29,21 @@ function errorHandler(err, req, res, next) {
         if (err.code === '23503') {
             // 外键约束违反
             return res.status(400).json({
+                success: false,
                 error: '关联数据不存在'
             });
         }
         if (err.code.startsWith('23')) {
             // 其他完整性约束错误
             return res.status(400).json({
+                success: false,
                 error: '数据验证失败'
             });
         }
         if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') {
             // 连接错误
             return res.status(503).json({
+                success: false,
                 error: '数据库连接失败'
             });
         }
@@ -48,6 +52,7 @@ function errorHandler(err, req, res, next) {
     // Joi 验证错误
     if (err.name === 'ValidationError') {
         return res.status(400).json({
+            success: false,
             error: '请求参数验证失败',
             details: err.details
         });
@@ -56,11 +61,13 @@ function errorHandler(err, req, res, next) {
     // 认证相关错误
     if (err.name === 'UnauthorizedError' || err.name === 'JsonWebTokenError') {
         return res.status(401).json({
+            success: false,
             error: '认证失败'
         });
     }
     if (err.name === 'TokenExpiredError') {
         return res.status(401).json({
+            success: false,
             error: '认证已过期'
         });
     }
@@ -68,12 +75,14 @@ function errorHandler(err, req, res, next) {
     // 自定义业务错误
     if (err.status) {
         return res.status(err.status).json({
+            success: false,
             error: err.message || '请求失败'
         });
     }
 
     // 未知错误
     res.status(500).json({
+        success: false,
         error: '服务器内部错误'
     });
 }
@@ -83,6 +92,7 @@ function errorHandler(err, req, res, next) {
  */
 function notFoundHandler(req, res, next) {
     res.status(404).json({
+        success: false,
         error: '资源不存在',
         path: req.path
     });

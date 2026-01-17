@@ -24,7 +24,10 @@ router.delete('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
-    res.json({ message: `说说 '${id}' 删除成功` });
+    res.json({
+        success: true,
+        message: `说说 '${id}' 删除成功`
+    });
 }));
 
 module.exports = router;

@@ -30,7 +30,11 @@ router.post('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
-    res.json({ message: '说说添加成功', talk: result.rows[0] });
+    res.json({
+        success: true,
+        message: '说说添加成功',
+        data: { talk: result.rows[0] }
+    });
 }));
 
 module.exports = router;

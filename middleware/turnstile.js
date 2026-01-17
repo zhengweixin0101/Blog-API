@@ -84,6 +84,7 @@ async function verifyTurnstile(req, res, next) {
     // 如果标记需要验证，但没有提供 turnstileToken，要求验证
     if (shouldRequireVerification(token)) {
         return res.status(400).json({
+            success: false,
             error: '请完成人机验证',
             needTurnstile: true
         });
@@ -95,6 +96,7 @@ async function verifyTurnstile(req, res, next) {
 
         if (!result.success) {
             return res.status(403).json({
+                success: false,
                 error: '人机验证失败',
                 detail: result.errorCodes,
                 needTurnstile: true

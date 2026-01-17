@@ -39,7 +39,11 @@ router.put('/', asyncHandler(async (req, res) => {
     await clearPostListCache();
     await clearPostCache(slug);
 
-    res.json({ message: '文章更新成功', article: result.rows[0] });
+    res.json({
+        success: true,
+        message: '文章更新成功',
+        data: { article: result.rows[0] }
+    });
 }));
 
 module.exports = router;

@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 8000;
 // 中间件
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
-const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, talkSchema, editTalkSchema, deleteTalkSchema } = require('./middleware/validate');
+const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema } = require('./middleware/validate');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // 路由
@@ -46,11 +46,11 @@ app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute)
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
-app.use('/api/article/all', verifyAuth, getAllRoute);
+app.use('/api/article/all', verifyAuth, verifyTurnstile, getAllRoute);
 app.use('/api/article/add', verifyAuth, validate(articleSchema), verifyTurnstile, addArticleRoute);
 app.use('/api/article/edit', verifyAuth, validate(editArticleSchema), verifyTurnstile, editArticleRoute);
 app.use('/api/article/delete', verifyAuth, validate(deleteArticleSchema), verifyTurnstile, deleteArticleRoute);
-app.use('/api/article/edit-slug', verifyAuth, verifyTurnstile, editSlugRoute);
+app.use('/api/article/edit-slug', verifyAuth, validate(editSlugSchema), verifyTurnstile, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
 app.use('/api/talks/edit', verifyAuth, validate(editTalkSchema), verifyTurnstile, editTalkRoute);

@@ -27,13 +27,18 @@ router.get('/', asyncHandler(async (req, res) => {
         ? (all ? `posts:list:fields:${fields.join(',')}:all` : `posts:list:fields:${fields.join(',')}`)
         : (all ? 'posts:list:all' : 'posts:list');
 
-    let cached;
-    if (redis) {
-        cached = await redis.get(cacheKey);
-    }
-    if (cached) {
-        return res.json(JSON.parse(cached));
-    }
+        let cached;
+        if (redis) {
+            cached = await redis.get(cacheKey);
+        }
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            return res.json({
+                success: true,
+                message: '获取成功',
+                data: parsed
+            });
+        }
 
     const allowedFields = Object.keys(FIELD_MAP);
 
@@ -54,7 +59,11 @@ router.get('/', asyncHandler(async (req, res) => {
         await redis.set(cacheKey, JSON.stringify(rows), 'EX', 30 * 24 * 60 * 60);
     }
 
-    res.json(rows);
+    res.json({
+        success: true,
+        message: '获取成功',
+        data: rows
+    });
 }));
 
 module.exports = router;

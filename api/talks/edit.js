@@ -61,7 +61,11 @@ router.put('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
-    res.json({ message: '说说更新成功', talk: result.rows[0] });
+    res.json({
+        success: true,
+        message: '说说更新成功',
+        data: { talk: result.rows[0] }
+    });
 }));
 
 module.exports = router;

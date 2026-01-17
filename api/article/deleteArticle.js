@@ -25,7 +25,10 @@ router.delete('/', asyncHandler(async (req, res) => {
     await clearPostListCache();
     await clearPostCache(slug);
 
-    res.json({ message: `文章 '${slug}' 删除成功` });
+    res.json({
+        success: true,
+        message: `文章 '${slug}' 删除成功`
+    });
 }));
 
 module.exports = router;

@@ -60,7 +60,11 @@ router.get('/', asyncHandler(async (req, res) => {
 		totalPages: pageSize ? Math.ceil(total / pageSize) : 1,
 	};
 
-	res.json(responseData);
+	res.json({
+		success: true,
+		message: '获取成功',
+		data: responseData
+	});
 }));
 
 module.exports = router;

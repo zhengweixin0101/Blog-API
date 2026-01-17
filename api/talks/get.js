@@ -22,7 +22,12 @@ router.get('/', asyncHandler(async (req, res) => {
     if (redis) {
         const cached = await redis.get(cacheKey);
         if (cached) {
-            return res.json(JSON.parse(cached));
+            const parsed = JSON.parse(cached);
+            return res.json({
+                success: true,
+                message: '获取成功',
+                data: parsed
+            });
         }
     }
 
@@ -95,7 +100,11 @@ router.get('/', asyncHandler(async (req, res) => {
         await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 30 * 24 * 60 * 60);
     }
 
-    res.json(responseData);
+    res.json({
+        success: true,
+        message: '获取成功',
+        data: responseData
+    });
 }));
 
 module.exports = router;
