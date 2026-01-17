@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const db = require('../../db.js');
 const turnstile = require('../../middleware/turnstile');
@@ -7,12 +8,7 @@ const router = express.Router();
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24小时
 
 function generateToken() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let token = '';
-    for (let i = 0; i < 64; i++) {
-        token += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return token;
+    return crypto.randomBytes(32).toString('hex');
 }
 
 router.post('/', async (req, res) => {
