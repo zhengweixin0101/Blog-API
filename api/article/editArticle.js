@@ -9,10 +9,6 @@ router.put('/', async (req, res) => {
     try {
         const { slug, title, content, tags, description, date, published } = req.body;
 
-        if (!slug) {
-            return res.status(400).json({ error: '缺少 slug' });
-        }
-
         // 检查文章是否存在
         const existing = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
         if (existing.rows.length === 0) {

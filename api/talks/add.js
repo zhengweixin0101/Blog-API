@@ -10,10 +10,6 @@ router.post('/', async (req, res) => {
     try {
         const { content, location, links = [], imgs = [], tags = [] } = req.body;
 
-        if (!content) {
-            return res.status(400).json({ error: '内容不能为空' });
-        }
-
         const linksArray = Array.isArray(links) ? links : [links];
         const imgsArray = Array.isArray(imgs) ? imgs : [imgs];
 

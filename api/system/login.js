@@ -29,12 +29,6 @@ router.post('/', async (req, res) => {
             // 忽略检查异常，继续正常流程
         }
 
-        if (!username || !password) {
-            // 缺少参数视为一次失败，要求后续请求进行人机验证
-            try { turnstile.setNeedVerification(true); } catch (e) {}
-            return res.status(400).json({ error: '用户名和密码不能为空' });
-        }
-
         const result = await db.query(
             'SELECT * FROM admin WHERE username = $1',
             [username]

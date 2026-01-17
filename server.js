@@ -23,6 +23,7 @@ const PORT = process.env.PORT || 8000;
 // 中间件
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
+const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, talkSchema, editTalkSchema, deleteTalkSchema } = require('./middleware/validate');
 
 // 路由
 const getArticleRoute = require('./api/article/getArticle');
@@ -40,20 +41,20 @@ const deleteTalkRoute = require('./api/talks/delete');
 
 const loginRoute = require('./api/system/login');
 
-app.use('/api/system/login', verifyTurnstile, loginRoute);
+app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
 app.use('/api/article/all', verifyAuth, getAllRoute);
-app.use('/api/article/add', verifyAuth, verifyTurnstile, addArticleRoute);
-app.use('/api/article/edit', verifyAuth, verifyTurnstile, editArticleRoute);
-app.use('/api/article/delete', verifyAuth, verifyTurnstile, deleteArticleRoute);
+app.use('/api/article/add', verifyAuth, validate(articleSchema), verifyTurnstile, addArticleRoute);
+app.use('/api/article/edit', verifyAuth, validate(editArticleSchema), verifyTurnstile, editArticleRoute);
+app.use('/api/article/delete', verifyAuth, validate(deleteArticleSchema), verifyTurnstile, deleteArticleRoute);
 app.use('/api/article/edit-slug', verifyAuth, verifyTurnstile, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
-app.use('/api/talks/edit', verifyAuth, verifyTurnstile, editTalkRoute);
-app.use('/api/talks/add', verifyAuth, verifyTurnstile, addTalkRoute);
-app.use('/api/talks/delete', verifyAuth, verifyTurnstile, deleteTalkRoute);
+app.use('/api/talks/edit', verifyAuth, validate(editTalkSchema), verifyTurnstile, editTalkRoute);
+app.use('/api/talks/add', verifyAuth, validate(talkSchema), verifyTurnstile, addTalkRoute);
+app.use('/api/talks/delete', verifyAuth, validate(deleteTalkSchema), verifyTurnstile, deleteTalkRoute);
 
 // 404处理
 app.use((_req, res) => {

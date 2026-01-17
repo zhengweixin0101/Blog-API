@@ -7,7 +7,6 @@ const { clearPostListCache, clearPostCache } = require('../../utils/cache');
 // 前端发送 JSON: { slug: '文章slug' }
 router.delete('/', async (req, res) => {
     const { slug } = req.body;
-    if (!slug) return res.status(400).json({ error: '缺少 slug' });
 
     try {
         const result = await db.query(

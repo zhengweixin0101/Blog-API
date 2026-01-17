@@ -9,10 +9,6 @@ router.post('/', async (req, res) => {
     try {
         const { slug, title, content, tags, description, date, published } = req.body;
 
-        if (!slug) {
-            return res.status(400).json({ error: '需要 slug 字段' });
-        }
-
         // 检查是否已存在
         const existing = await db.query('SELECT * FROM articles WHERE slug = $1', [slug]);
         if (existing.rows.length > 0) {

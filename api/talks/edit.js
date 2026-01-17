@@ -8,7 +8,6 @@ const redis = db.redis;
 // 前端发送 JSON: { id, content?, location?, tags?, links?, imgs? }
 router.put('/', async (req, res) => {
     const { id, content, location, tags, links, imgs } = req.body;
-    if (!id) return res.status(400).json({ error: '缺少 id' });
 
     try {
         const fields = [];

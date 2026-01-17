@@ -8,7 +8,6 @@ const redis = db.redis;
 // 前端发送 JSON: { id: '说说id' }
 router.delete('/', async (req, res) => {
     const { id } = req.body;
-    if (!id) return res.status(400).json({ error: 'ID 是必须的' });
 
     try {
         const result = await db.query(
