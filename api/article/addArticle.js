@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
-
-const redis = db.redis;
+const { clearPostListCache } = require('../../utils/cache');
 
 // 添加文章接口
 // 前端发送 JSON: { slug, title?, content?, tags?, description?, date?, published? }
@@ -37,24 +36,7 @@ router.post('/', async (req, res) => {
         );
 
         const newArticle = result.rows[0];
-
-        if (redis) {
-            try {
-                let cursor = '0';
-                do {
-                    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
-                    cursor = nextCursor;
-                    if (keys.length > 0) {
-                        const batchSize = 50;
-                        for (let i = 0; i < keys.length; i += batchSize) {
-                            await redis.del(...keys.slice(i, i + batchSize));
-                        }
-                    }
-                } while (cursor !== '0');
-            } catch (err) {
-                console.error('删除缓存出错了：', err);
-            }
-        }
+        await clearPostListCache();
 
         res.json({ message: '文章添加成功', article: newArticle });
     } catch (err) {

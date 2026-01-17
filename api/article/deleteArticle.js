@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
-
-const redis = db.redis;
+const { clearPostListCache, clearPostCache } = require('../../utils/cache');
 
 // 删除文章接口
 // 前端发送 JSON: { slug: '文章slug' }
@@ -20,27 +19,8 @@ router.delete('/', async (req, res) => {
             return res.status(404).json({ error: '文章未找到' });
         }
 
-        const articleSlug = result.rows[0].slug;
-        if (redis) {
-            await redis.del(`post:${articleSlug}`);
-            await redis.del(`post:html:${articleSlug}`);
-            try {
-                let cursor = '0';
-                do {
-                    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
-                    cursor = nextCursor;
-                    if (keys.length > 0) {
-                        const batchSize = 50;
-                        for (let i = 0; i < keys.length; i += batchSize) {
-                            await redis.del(...keys.slice(i, i + batchSize));
-                        }
-                    }
-                } while (cursor !== '0');
-            } catch (err) {
-                console.error('删除文章缓存时出错：', err);
-            }
-        }
-
+        await clearPostListCache();
+        await clearPostCache(slug);
 
         res.json({ message: `文章 '${slug}' 删除成功` });
     } catch (err) {

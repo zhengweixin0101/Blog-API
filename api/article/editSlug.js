@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
-
-const redis = db.redis;
+const { clearPostListCache, clearPostCache } = require('../../utils/cache');
 
 // 修改文章 slug 接口
 // 前端发送 JSON: { oldSlug, newSlug }
@@ -33,25 +32,9 @@ router.put('/', async (req, res) => {
         );
 
         const updatedArticle = result.rows[0];
-        if (redis) {
-            try {
-                let cursor = '0';
-                do {
-                    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
-                    cursor = nextCursor;
-                    if (keys.length > 0) {
-                        const batchSize = 50;
-                        for (let i = 0; i < keys.length; i += batchSize) {
-                            await redis.del(...keys.slice(i, i + batchSize));
-                        }
-                    }
-                } while (cursor !== '0');
-            } catch (err) {
-                console.error('清除文章列表缓存时出错：', err);
-            }
-            await redis.del(`post:${oldSlug}`);
-            await redis.del(`post:html:${oldSlug}`);
-        }
+
+        await clearPostListCache();
+        await clearPostCache(oldSlug);
 
         res.json({ message: 'slug 更新成功', article: updatedArticle });
     } catch (err) {

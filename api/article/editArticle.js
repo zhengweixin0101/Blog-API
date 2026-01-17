@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
-
-const redis = db.redis;
+const { clearPostListCache, clearPostCache } = require('../../utils/cache');
 
 // 更新文章接口
 // 前端发送 JSON: { slug, title?, content?, tags?, description?, date?, published? }
@@ -36,27 +35,9 @@ router.put('/', async (req, res) => {
         values.push(slug);
 
         const result = await db.query(query, values);
-        const articleSlug = existing.rows[0].slug;
 
-        if (redis) {
-            try {
-                let cursor = '0';
-                do {
-                    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
-                    cursor = nextCursor;
-                    if (keys.length > 0) {
-                        const batchSize = 50;
-                        for (let i = 0; i < keys.length; i += batchSize) {
-                            await redis.del(...keys.slice(i, i + batchSize));
-                        }
-                    }
-                } while (cursor !== '0');
-            } catch (err) {
-                console.error('清除文章列表缓存时出错：', err);
-            }
-            await redis.del(`post:${articleSlug}`);
-            await redis.del(`post:html:${articleSlug}`);
-        }
+        await clearPostListCache();
+        await clearPostCache(slug);
 
         res.json({ message: '文章更新成功', article: result.rows[0] });
 
