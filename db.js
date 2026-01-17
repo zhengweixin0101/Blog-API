@@ -26,6 +26,27 @@ if (process.env.REDIS_URL) {
     redis.on('error', (err) => console.error('❌ Redis error:', err));
 }
 
+/**
+ * 关闭数据库连接
+ * @returns {Promise<void>}
+ */
+async function close() {
+    try {
+        // 关闭 PostgreSQL 连接池
+        await pool.end();
+        console.log('✅ PostgreSQL 连接已关闭');
+
+        // 关闭 Redis 连接
+        if (redis) {
+            await redis.quit();
+            console.log('✅ Redis 连接已关闭');
+        }
+    } catch (err) {
+        console.error('❌ 关闭数据库连接时出错:', err);
+        throw err;
+    }
+}
+
 async function init() {
     if (redis) {
         let cursor = '0';
@@ -121,4 +142,5 @@ module.exports = {
     query: (text, params) => pool.query(text, params),
     init,
     redis,
+    close
 };

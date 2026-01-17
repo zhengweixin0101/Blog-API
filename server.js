@@ -65,7 +65,41 @@ app.use((_req, res) => {
 (async () => {
     try {
         await db.init(); // 初始化数据库
-        app.listen(PORT, () => console.log(`🚀 服务运行在 http://localhost:${PORT}/`));
+        const server = app.listen(PORT, () => console.log(`🚀 服务运行在 http://localhost:${PORT}/`));
+
+        // 优雅关闭处理
+        const gracefulShutdown = async (signal) => {
+            console.log(`\n⚠️  收到 ${signal} 信号，开始关闭...`);
+
+            // 停止接受新连接
+            server.close(async (err) => {
+                if (err) {
+                    console.error('❌ 关闭 HTTP 服务器失败:', err);
+                    process.exit(1);
+                }
+
+                try {
+                    // 关闭数据库连接
+                    await db.close();
+                    console.log('✅ 所有连接已关闭，服务停止');
+                    process.exit(0);
+                } catch (closeErr) {
+                    console.error('❌ 关闭数据库连接失败:', closeErr);
+                    process.exit(1);
+                }
+            });
+
+            // 如果 10 秒内未完成关闭，强制退出
+            setTimeout(() => {
+                console.error('❌ 关闭超时，强制退出');
+                process.exit(1);
+            }, 10000);
+        };
+
+        // 监听退出信号
+        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
     } catch (err) {
         console.error("❌ 数据库初始化失败：", err);
         process.exit(1);

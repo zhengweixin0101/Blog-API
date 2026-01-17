@@ -17,16 +17,12 @@ function generateToken() {
 
 router.post('/', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, turnstileToken } = req.body;
+        const providedToken = turnstileToken || req.headers['x-turnstile-token'];
 
         // 若服务端已标记需要人机验证，且本次请求未提供 turnstile token，则直接返回提示
-        const providedToken = req.body.turnstileToken || req.headers['x-turnstile-token'];
-        try {
-            if (turnstile.isNeedVerification && turnstile.isNeedVerification() && !providedToken) {
-                return res.status(400).json({ error: '请先进行人机验证', needTurnstile: true });
-            }
-        } catch (e) {
-            // 忽略检查异常，继续正常流程
+        if (turnstile.shouldRequireVerification(providedToken)) {
+            return res.status(400).json({ error: '请先进行人机验证', needTurnstile: true });
         }
 
         const result = await db.query(
@@ -39,7 +35,7 @@ router.post('/', async (req, res) => {
             const adminCount = parseInt(adminCountResult.rows[0].count, 10);
 
             if (adminCount > 0) {
-                try { turnstile.setNeedVerification(true); } catch (e) {}
+                turnstile.setNeedVerification(true);
                 return res.status(403).json({ error: '用户名或密码错误' });
             }
 
@@ -54,7 +50,7 @@ router.post('/', async (req, res) => {
             );
 
             // 创建账号成功，清除人机验证标记
-            try { turnstile.clearVerification(); } catch (e) {}
+            turnstile.clearVerification();
             return res.json({
                 message: '账号创建成功并已登录',
                 token,
@@ -67,7 +63,7 @@ router.post('/', async (req, res) => {
 
         if (!isValid) {
             // 密码错误，要求后续请求进行人机验证
-            try { turnstile.setNeedVerification(true); } catch (e) {}
+            turnstile.setNeedVerification(true);
             return res.status(401).json({ error: '用户名或密码错误' });
         }
 
@@ -81,7 +77,7 @@ router.post('/', async (req, res) => {
         );
 
         // 登录成功，清除人机验证标记
-        try { turnstile.clearVerification(); } catch (e) {}
+        turnstile.clearVerification();
         res.json({
             message: '登录成功',
             token,
