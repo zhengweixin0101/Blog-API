@@ -19,26 +19,28 @@ const FIELD_MAP = {
 
 /**
  * GET /api/article/list - 获取文章列表
- * Query: ?posts=all&fields=slug,title,date
+ * Query: ?posts=all&fields=slug,title,date&page=<page>&pageSize=<pageSize>
  */
 router.get('/', asyncHandler(async (req, res) => {
     const all = req.query.posts === 'all';
     const fieldsQuery = req.query.fields;
     const fields = fieldsQuery ? fieldsQuery.split(',').map(f => f.trim()) : null;
-    const cacheKey = CacheKeys.postListKey(all, fields);
+    const { page, pageSize } = req.query;
 
-        let cached;
-        if (redis) {
-            cached = await redis.get(cacheKey);
-        }
-        if (cached) {
-            const parsed = JSON.parse(cached);
-            return res.json({
-                success: true,
-                message: '获取成功',
-                data: parsed
-            });
-        }
+    const cacheKey = CacheKeys.postListKey(all, fields, page, pageSize);
+
+    let cached;
+    if (redis) {
+        cached = await redis.get(cacheKey);
+    }
+    if (cached) {
+        const parsed = JSON.parse(cached);
+        return res.json({
+            success: true,
+            message: '获取成功',
+            data: parsed
+        });
+    }
 
     const allowedFields = Object.keys(FIELD_MAP);
 
@@ -48,12 +50,34 @@ router.get('/', asyncHandler(async (req, res) => {
             .map(f => FIELD_MAP[f])
         : Object.values(FIELD_MAP);
 
-    const { rows } = await db.query(
-        `SELECT ${columns.join(', ')}
-         FROM articles
-         ${all ? '' : 'WHERE published = true'}
-         ORDER BY date DESC`
-    );
+    let query = `SELECT ${columns.join(', ')} FROM articles`;
+    const params = [];
+    let whereClause = '';
+
+    if (!all) {
+        whereClause = 'WHERE published = true';
+        query += ` ${whereClause}`;
+    }
+
+    query += ` ORDER BY date DESC`;
+
+    // 分页处理
+    if (page && pageSize) {
+        const pageNum = Number(page);
+        const pageSizeNum = Number(pageSize);
+
+        if (isNaN(pageNum) || isNaN(pageSizeNum) || pageNum <= 0 || pageSizeNum <= 0) {
+            const err = new Error('分页参数必须为正整数');
+            err.status = 400;
+            throw err;
+        }
+
+        const offset = (pageNum - 1) * pageSizeNum;
+        query += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(pageSizeNum, offset);
+    }
+
+    const { rows } = await db.query(query, params);
 
     if (redis) {
         await redis.set(cacheKey, JSON.stringify(rows), 'EX', Cache.TTL.POST_LIST);

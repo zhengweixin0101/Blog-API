@@ -21,13 +21,23 @@ const CacheKeys = {
      * 生成文章列表缓存键
      * @param {boolean} all - 是否包含未发布文章
      * @param {string[]} fields - 请求的字段
+     * @param {number} page - 页码（可选）
+     * @param {number} pageSize - 每页数量（可选）
      * @returns {string} 缓存键
      */
-    postListKey: (all = false, fields = null) => {
+    postListKey: (all = false, fields = null, page = null, pageSize = null) => {
+        let key = '';
         if (fields && fields.length > 0) {
-            return `post:list:fields:${fields.join(',')}${all ? ':all' : ''}`;
+            key = `post:list:fields:${fields.join(',')}${all ? ':all' : ''}`;
+        } else {
+            key = all ? CacheKeys.POST_LIST_ALL : CacheKeys.POST_LIST;
         }
-        return all ? CacheKeys.POST_LIST_ALL : CacheKeys.POST_LIST;
+
+        if (page && pageSize) {
+            key += `:${page}:${pageSize}`;
+        }
+
+        return key;
     },
 
     /**
@@ -42,12 +52,30 @@ const CacheKeys = {
 
     /**
      * 生成说说列表缓存键
-     * @param {number} page - 页码
-     * @param {number} limit - 每页数量
+     * @param {number} page - 页码（可选）
+     * @param {number} pageSize - 每页数量（可选）
+     * @param {string} tag - 标签筛选（可选）
+     * @param {string} sort - 排序方式（可选）
      * @returns {string} 缓存键
      */
-    talksListKey: (page = 1, limit = 10) => {
-        return `talks:list:${page}:${limit}`;
+    talksListKey: (page = null, pageSize = null, tag = null, sort = null) => {
+        let key = 'talks:list';
+
+        if (page && pageSize) {
+            key += `:${page}:${pageSize}`;
+        } else {
+            key += ':all';
+        }
+
+        if (tag) {
+            key += `:tag:${tag}`;
+        }
+
+        if (sort) {
+            key += `:sort:${sort}`;
+        }
+
+        return key;
     }
 };
 

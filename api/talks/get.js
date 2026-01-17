@@ -13,10 +13,28 @@ const redis = db.redis;
  */
 router.get('/', asyncHandler(async (req, res) => {
     let { page, pageSize, tag, sort = 'desc' } = req.query;
-    
+
+    // 转换为数字或 null
+    page = page ? Number(page) : null;
+    pageSize = pageSize ? Number(pageSize) : null;
+
+    // 验证分页参数完整性
+    if ((page && !pageSize) || (!page && pageSize)) {
+        const err = new Error('分页参数不完整，必须同时提供 page 和 pageSize');
+        err.status = 400;
+        throw err;
+    }
+
+    // 验证参数有效性
+    if ((page && (isNaN(page) || page <= 0)) || (pageSize && (isNaN(pageSize) || pageSize <= 0))) {
+        const err = new Error('分页参数必须为正整数');
+        err.status = 400;
+        throw err;
+    }
+
     const sortOrder = sort.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    const cacheKey = CacheKeys.talksListKey(page || 1, pageSize || 10);
+    const cacheKey = CacheKeys.talksListKey(page, pageSize, tag, sort);
 
     if (redis) {
         const cached = await redis.get(cacheKey);
@@ -44,22 +62,10 @@ router.get('/', asyncHandler(async (req, res) => {
     `;
 
     let result;
+    // 不提供分页参数时返回全部数据
     if (!page && !pageSize) {
         result = await db.query(baseQuery, params);
-    } else if ((page && !pageSize) || (!page && pageSize)) {
-        const err = new Error('分页参数不完整，必须同时提供 page 和 pageSize');
-        err.status = 400;
-        throw err;
     } else {
-        page = Number(page);
-        pageSize = Number(pageSize);
-
-        if (isNaN(page) || isNaN(pageSize) || page <= 0 || pageSize <= 0) {
-            const err = new Error('分页参数必须为正整数');
-            err.status = 400;
-            throw err;
-        }
-
         const offset = (page - 1) * pageSize;
         const limitIndex = params.length + 1;
         const offsetIndex = params.length + 2;
