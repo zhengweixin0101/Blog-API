@@ -109,8 +109,6 @@ async function verifyTurnstile(req, res, next) {
 }
 
 module.exports = asyncHandler(verifyTurnstile);
-
-module.exports = verifyTurnstile;
 module.exports.isNeedVerification = isNeedVerification;
 module.exports.setNeedVerification = setNeedVerification;
 module.exports.clearVerification = clearVerification;
