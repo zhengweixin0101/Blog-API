@@ -5,6 +5,18 @@ require('dotenv').config();
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
+    max: 10,
+    min: 1,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+});
+
+pool.on('connect', () => {
+    console.log('✅ PostgreSQL 连接成功');
+});
+
+pool.on('error', (err) => {
+    console.error('❌ PostgreSQL error:', err);
 });
 
 let redis = null;
