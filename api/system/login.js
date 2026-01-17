@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt');
 const db = require('../../db.js');
 const turnstile = require('../../middleware/turnstile');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const { Auth } = require('../../utils/config');
 
 const router = express.Router();
-const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24小时
 
 function generateToken() {
     return crypto.randomBytes(32).toString('hex');
@@ -47,7 +47,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
         const token = generateToken();
-        const tokenExpiresAt = new Date(Date.now() + TOKEN_EXPIRY);
+        const tokenExpiresAt = new Date(Date.now() + Auth.TOKEN_EXPIRY);
 
         await db.query(
             `INSERT INTO admin (username, password, token, token_expires_at)
@@ -61,7 +61,7 @@ router.post('/', asyncHandler(async (req, res) => {
             success: true,
             message: '账号创建成功并已登录',
             token,
-            expiresIn: TOKEN_EXPIRY
+            expiresIn: Auth.TOKEN_EXPIRY
         });
     }
 
@@ -77,7 +77,7 @@ router.post('/', asyncHandler(async (req, res) => {
     }
 
     const token = generateToken();
-    const tokenExpiresAt = new Date(Date.now() + TOKEN_EXPIRY);
+    const tokenExpiresAt = new Date(Date.now() + Auth.TOKEN_EXPIRY);
 
     await db.query(
         `UPDATE admin SET token = $1, token_expires_at = $2
@@ -91,7 +91,7 @@ router.post('/', asyncHandler(async (req, res) => {
         success: true,
         message: '登录成功',
         token,
-        expiresIn: TOKEN_EXPIRY
+        expiresIn: Auth.TOKEN_EXPIRY
     });
 }));
 

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../db');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const { CacheKeys } = require('../../utils/constants');
+const { Cache } = require('../../utils/config');
 
 const redis = db.redis;
 
@@ -23,9 +25,7 @@ router.get('/', asyncHandler(async (req, res) => {
     const all = req.query.posts === 'all';
     const fieldsQuery = req.query.fields;
     const fields = fieldsQuery ? fieldsQuery.split(',').map(f => f.trim()) : null;
-    const cacheKey = fields
-        ? (all ? `posts:list:fields:${fields.join(',')}:all` : `posts:list:fields:${fields.join(',')}`)
-        : (all ? 'posts:list:all' : 'posts:list');
+    const cacheKey = CacheKeys.postListKey(all, fields);
 
         let cached;
         if (redis) {
@@ -56,7 +56,7 @@ router.get('/', asyncHandler(async (req, res) => {
     );
 
     if (redis) {
-        await redis.set(cacheKey, JSON.stringify(rows), 'EX', 30 * 24 * 60 * 60);
+        await redis.set(cacheKey, JSON.stringify(rows), 'EX', Cache.TTL.POST_LIST);
     }
 
     res.json({

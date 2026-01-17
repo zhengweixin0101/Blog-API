@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../../db');
 const { marked } = require('marked');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const { CacheKeys } = require('../../utils/constants');
+const { Cache } = require('../../utils/config');
 
 const redis = db.redis;
 
@@ -12,13 +14,14 @@ const redis = db.redis;
  */
 router.get('/', asyncHandler(async (req, res) => {
     const { slug, type = 'markdown' } = req.query;
+    
     if (!slug) {
         const err = new Error('缺少 slug');
         err.status = 400;
         throw err;
     }
 
-    const cacheKey = type === 'html' ? `post:html:${slug}` : `post:${slug}`;
+    const cacheKey = CacheKeys.postDetailKey(slug, type === 'html');
 
     if (redis) {
         const cached = await redis.get(cacheKey);
@@ -71,7 +74,7 @@ router.get('/', asyncHandler(async (req, res) => {
             cacheKey,
             JSON.stringify(responseData),
             'EX',
-            30 * 24 * 60 * 60
+            Cache.TTL.POST_DETAIL
         );
     }
 

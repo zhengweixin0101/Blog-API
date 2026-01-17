@@ -18,7 +18,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const PORT = process.env.PORT || 8000;
+const { App } = require('./utils/config');
+const PORT = process.env.PORT || App.PORT;
 
 // 中间件
 const verifyAuth = require('./middleware/auth');
@@ -91,11 +92,11 @@ app.use(errorHandler);
                 }
             });
 
-            // 如果 10 秒内未完成关闭，强制退出
+            // 如果超时内未完成关闭，强制退出
             setTimeout(() => {
                 console.error('❌ 关闭超时，强制退出');
                 process.exit(1);
-            }, 10000);
+            }, App.SHUTDOWN_TIMEOUT);
         };
 
         // 监听退出信号

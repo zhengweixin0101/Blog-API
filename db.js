@@ -1,14 +1,16 @@
 const { Pool } = require('pg');
 const Redis = require('ioredis');
 require('dotenv').config();
+const { DBIndexes } = require('./utils/constants');
+const { Database, Cache } = require('./utils/config');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 10,
-    min: 1,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    max: Database.POOL.MAX,
+    min: Database.POOL.MIN,
+    idleTimeoutMillis: Database.POOL.IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: Database.POOL.CONNECTION_TIMEOUT_MS,
 });
 
 pool.on('connect', () => {
@@ -47,20 +49,24 @@ async function close() {
     }
 }
 
+const { CacheKeys } = require('./utils/constants');
+
 async function init() {
     if (redis) {
+        // 清除文章缓存
         let cursor = '0';
         do {
-            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:*', 'COUNT', 100);
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.POSTS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
             cursor = nextCursor;
             if (keys.length > 0) {
                 await redis.del(keys);
             }
         } while (cursor !== '0');
 
+        // 清除说说缓存
         cursor = '0';
         do {
-            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'talks:*', 'COUNT', 100);
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.TALKS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
             cursor = nextCursor;
             if (keys.length > 0) {
                 await redis.del(keys);
@@ -90,6 +96,9 @@ async function init() {
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
+
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.ARTICLES_SLUG} ON articles(slug);
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.ARTICLES_PUBLISHED_DATE} ON articles(published, date DESC);
     `;
 
     const createMemosTableQuery = `
@@ -112,6 +121,8 @@ async function init() {
             token TEXT,
             token_expires_at TIMESTAMP
         );
+
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.ADMIN_TOKEN} ON admin(token) WHERE token IS NOT NULL;
     `;
 
     const newlyCreated = [];

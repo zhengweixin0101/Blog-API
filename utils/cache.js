@@ -1,9 +1,11 @@
 const db = require('../db');
+const { CacheKeys } = require('./constants');
+const { Cache } = require('./config');
 const redis = db.redis;
 
 /**
  * 清除所有文章列表相关的缓存
- * 匹配模式：posts:list*
+ * 匹配模式：post:list*
  */
 async function clearPostListCache() {
     if (!redis) return;
@@ -11,12 +13,11 @@ async function clearPostListCache() {
     try {
         let cursor = '0';
         do {
-            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'posts:list*', 'COUNT', 100);
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${CacheKeys.POST_LIST}*`, 'COUNT', Cache.SCAN_COUNT);
             cursor = nextCursor;
             if (keys.length > 0) {
-                const batchSize = 50;
-                for (let i = 0; i < keys.length; i += batchSize) {
-                    await redis.del(...keys.slice(i, i + batchSize));
+                for (let i = 0; i < keys.length; i += Cache.DELETE_BATCH_SIZE) {
+                    await redis.del(...keys.slice(i, i + Cache.DELETE_BATCH_SIZE));
                 }
             }
         } while (cursor !== '0');
@@ -34,8 +35,8 @@ async function clearPostCache(slug) {
 
     try {
         await Promise.all([
-            redis.del(`post:${slug}`),
-            redis.del(`post:html:${slug}`)
+            redis.del(CacheKeys.postDetailKey(slug, false)),
+            redis.del(CacheKeys.postDetailKey(slug, true))
         ]);
     } catch (err) {
         console.error(`清除文章 [${slug}] 缓存时出错：`, err);
@@ -52,12 +53,11 @@ async function clearTalksCache() {
     try {
         let cursor = '0';
         do {
-            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'talks:*', 'COUNT', 100);
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.TALKS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
             cursor = nextCursor;
             if (keys.length > 0) {
-                const batchSize = 50;
-                for (let i = 0; i < keys.length; i += batchSize) {
-                    await redis.del(...keys.slice(i, i + batchSize));
+                for (let i = 0; i < keys.length; i += Cache.DELETE_BATCH_SIZE) {
+                    await redis.del(...keys.slice(i, i + Cache.DELETE_BATCH_SIZE));
                 }
             }
         } while (cursor !== '0');

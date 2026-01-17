@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const { CacheKeys } = require('../../utils/constants');
+const { Cache } = require('../../utils/config');
 
 const redis = db.redis;
 
@@ -11,13 +13,10 @@ const redis = db.redis;
  */
 router.get('/', asyncHandler(async (req, res) => {
     let { page, pageSize, tag, sort = 'desc' } = req.query;
+    
     const sortOrder = sort.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    let cacheKey = 'talks';
-    cacheKey += tag ? `:${tag}` : ':all';
-    if (page && pageSize) {
-        cacheKey += `:${page}:${pageSize}`;
-    }
+    const cacheKey = CacheKeys.talksListKey(page || 1, pageSize || 10);
 
     if (redis) {
         const cached = await redis.get(cacheKey);
@@ -97,7 +96,7 @@ router.get('/', asyncHandler(async (req, res) => {
     };
 
     if (redis) {
-        await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 30 * 24 * 60 * 60);
+        await redis.set(cacheKey, JSON.stringify(responseData), 'EX', Cache.TTL.TALKS_LIST);
     }
 
     res.json({
