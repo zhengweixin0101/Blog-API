@@ -61,18 +61,17 @@ const CacheKeys = {
     talksListKey: (page = null, pageSize = null, tag = null, sort = null) => {
         let key = 'talks:list';
 
+        // 标签或all标识
+        key += tag ? `:${tag}` : ':all';
+
+        // 分页参数（可选）
         if (page && pageSize) {
-            key += `:${page}:${pageSize}`;
-        } else {
-            key += ':all';
+            key += `:${pageSize}:${page}`;
         }
 
-        if (tag) {
-            key += `:tag:${tag}`;
-        }
-
-        if (sort) {
-            key += `:sort:${sort}`;
+        // 排序方式（非desc时才添加）
+        if (sort && sort.toLowerCase() !== 'desc') {
+            key += `:${sort}`;
         }
 
         return key;
