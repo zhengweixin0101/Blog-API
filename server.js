@@ -43,7 +43,15 @@ const deleteTalkRoute = require('./api/talks/delete');
 
 const loginRoute = require('./api/system/login');
 
+const listTokensRoute = require('./api/tokens/list');
+const createTokenRoute = require('./api/tokens/create');
+const revokeTokenRoute = require('./api/tokens/revoke');
+
 app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
+
+app.use('/api/tokens/list', verifyAuth, listTokensRoute);
+app.use('/api/tokens/create', verifyAuth, createTokenRoute);
+app.use('/api/tokens/revoke', verifyAuth, revokeTokenRoute);
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);

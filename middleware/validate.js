@@ -65,7 +65,7 @@ const deleteTalkSchema = Joi.object({
 });
 
 /**
- * 验证中间件工厂
+ * 验证中间件
  * @param {Joi.Schema} schema - Joi 验证模式
  * @param {string} property - 要验证的请求属性 (body, query, params)
  */

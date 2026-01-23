@@ -78,7 +78,7 @@ async function init() {
     const checkTablesQuery = `
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'admin');
+        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'configs', 'tokens');
     `;
     const result = await pool.query(checkTablesQuery);
     const existingTables = result.rows.map(r => r.table_name);
@@ -117,15 +117,29 @@ async function init() {
     `;
 
     const createAdminTableQuery = `
-        CREATE TABLE IF NOT EXISTS admin (
-            id SERIAL PRIMARY KEY,
-            username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            token TEXT,
-            token_expires_at TIMESTAMP
+        CREATE TABLE IF NOT EXISTS configs (
+            key TEXT PRIMARY KEY,
+            value JSONB NOT NULL DEFAULT '{}'::jsonb,
+            updated_at TIMESTAMP DEFAULT NOW()
         );
 
-        CREATE INDEX IF NOT EXISTS ${DBIndexes.ADMIN_TOKEN} ON admin(token) WHERE token IS NOT NULL;
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.CONFIGS_UPDATED_AT} ON configs(updated_at DESC);
+    `;
+
+    const createTokensTableQuery = `
+        CREATE TABLE IF NOT EXISTS tokens (
+            id SERIAL PRIMARY KEY,
+            token TEXT NOT NULL UNIQUE,
+            name TEXT,
+            description TEXT,
+            expires_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW(),
+            last_used_at TIMESTAMP,
+            is_active BOOLEAN DEFAULT true
+        );
+
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.TOKENS_TOKEN} ON tokens(token) WHERE is_active = true;
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.TOKENS_EXPIRES_AT} ON tokens(expires_at) WHERE expires_at IS NOT NULL;
     `;
 
     const newlyCreated = [];
@@ -140,9 +154,14 @@ async function init() {
         newlyCreated.push('talks');
     }
 
-    if (!existingTables.includes('admin')) {
+    if (!existingTables.includes('configs')) {
         await pool.query(createAdminTableQuery);
-        newlyCreated.push('admin');
+        newlyCreated.push('configs');
+    }
+
+    if (!existingTables.includes('tokens')) {
+        await pool.query(createTokensTableQuery);
+        newlyCreated.push('tokens');
     }
 
     if (newlyCreated.length > 0) {

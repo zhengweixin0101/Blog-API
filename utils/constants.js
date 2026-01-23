@@ -96,8 +96,12 @@ const DBIndexes = {
     TALKS_CREATED_AT: 'idx_talks_created_at',
     TALKS_TAGS: 'idx_talks_tags',
 
-    // admin 表索引
-    ADMIN_TOKEN: 'idx_admin_token'
+    // configs 表索引
+    CONFIGS_UPDATED_AT: 'idx_configs_updated_at',
+
+    // tokens 表索引
+    TOKENS_TOKEN: 'idx_tokens_token',
+    TOKENS_EXPIRES_AT: 'idx_tokens_expires_at'
 };
 
 module.exports = {

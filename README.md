@@ -43,6 +43,12 @@
 ### POST /api/system/login
 管理员登录/注册（首次登录自动注册）
 
+**说明**:
+- 管理员信息存储在 `configs` 表中,key 为 `admin`
+- 仅支持单人个管理员用户
+- 每次登录都会创建一个新的 token，支持多 token 共存
+- Token 信息存储在 `tokens` 表中
+
 **请求头**:
 - `Content-Type: application/json`
 
@@ -67,8 +73,102 @@
 
 **错误响应**:
 - `401` - 用户名或密码错误
-- `403` - 账号已存在，密码错误
 - `400` - 需要人机验证
+
+---
+
+## Token 管理接口
+
+### GET /api/tokens/list
+获取所有 token 列表（需认证）
+
+**请求头**:
+- `Authorization: Bearer <token>`
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": 1,
+      "name": "Login",
+      "description": "登录时自动创建",
+      "expiresAt": "2026-01-24T10:30:00.000Z",
+      "createdAt": "2026-01-23T10:30:00.000Z",
+      "lastUsedAt": "2026-01-23T11:00:00.000Z",
+      "isActive": true,
+      "tokenPreview": "a1b2c3d4..."
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/tokens/create
+创建新 token（需认证）
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**请求体**:
+```json
+{
+  "name": "Token Name",
+  "description": "这是 Token 的说明",
+  "expiresIn": 604800000  // 可选，过期时间（毫秒），默认 86400000（24小时）
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "Token 创建成功",
+  "data": {
+    "id": 2,
+    "name": "开发环境 Token",
+    "description": "用于本地开发测试",
+    "token": "f5e6d7c8b9a0...",
+    "expiresAt": "2026-01-30T10:30:00.000Z",
+    "createdAt": "2026-01-23T10:30:00.000Z",
+    "expiresIn": 604800000
+  }
+}
+```
+
+**错误响应**:
+- `400` - 请求参数验证失败
+
+---
+
+### DELETE /api/tokens/revoke
+删除 token（需认证）
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**请求体**:
+```json
+{
+  "id": 2
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "Token 'Token Name' 已删除"
+}
+```
+
+**错误响应**:
+- `404` - Token 不存在
 
 ---
 
@@ -555,3 +655,25 @@ GET /api/talks/get?sort=asc
 | imgs | string[] | 图片 URL 数组 |
 | tags | string[] | 标签数组 |
 | created_at | string | 创建时间 |
+
+### Config (配置)
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| key | string | 配置键（主键） |
+| value | JSONB | 配置值（JSON 格式） |
+| updated_at | string | 更新时间 |
+
+**预定义配置键**:
+- `admin` - 管理员配置，包含 `username`、`password`
+
+### Token (令牌)
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | number | Token ID |
+| token | string | Token 值（唯一） |
+| name | string | Token 名称 |
+| description | string \| null | Token 描述 |
+| expires_at | string | 过期时间 |
+| created_at | string | 创建时间 |
+| last_used_at | string \| null | 最后使用时间 |
+| is_active | boolean | 是否有效 |

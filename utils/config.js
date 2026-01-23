@@ -6,8 +6,8 @@
  * 认证相关配置
  */
 const Auth = {
-    TOKEN_EXPIRY: 3 * 24 * 60 * 60 * 1000, // Token 有效期（毫秒）
-    TOKEN_LENGTH: 64,                   // Token 长度
+    TOKEN_EXPIRY: 3 * 24 * 60 * 60 * 1000, // Token 默认有效期（毫秒），登录和未传 expiresIn 时使用
+    TOKEN_LENGTH: 64,                     // Token 长度
 };
 
 /**
