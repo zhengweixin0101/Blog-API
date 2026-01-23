@@ -24,7 +24,7 @@ const PORT = process.env.PORT || App.PORT;
 // 中间件
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
-const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema } = require('./middleware/validate');
+const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema } = require('./middleware/validate');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // 路由
@@ -42,12 +42,14 @@ const addTalkRoute = require('./api/talks/add');
 const deleteTalkRoute = require('./api/talks/delete');
 
 const loginRoute = require('./api/system/login');
+const updateAccountRoute = require('./api/system/updateAccount');
 
 const listTokensRoute = require('./api/tokens/list');
 const createTokenRoute = require('./api/tokens/create');
 const revokeTokenRoute = require('./api/tokens/revoke');
 
 app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
+app.use('/api/system/updateAccount', verifyAuth, validate(updateAccountSchema), updateAccountRoute);
 
 app.use('/api/tokens/list', verifyAuth, listTokensRoute);
 app.use('/api/tokens/create', verifyAuth, createTokenRoute);

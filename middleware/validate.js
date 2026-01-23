@@ -64,6 +64,13 @@ const deleteTalkSchema = Joi.object({
     id: Joi.number().integer().positive().required()
 });
 
+// 修改账号验证
+const updateAccountSchema = Joi.object({
+    username: Joi.string().min(1).max(100).optional(),
+    password: Joi.string().min(1).optional(),
+    currentPassword: Joi.string().required()
+}).or('username', 'password');
+
 /**
  * 验证中间件
  * @param {Joi.Schema} schema - Joi 验证模式
@@ -101,5 +108,6 @@ module.exports = {
     deleteArticleSchema,
     talkSchema,
     editTalkSchema,
-    deleteTalkSchema
+    deleteTalkSchema,
+    updateAccountSchema
 };

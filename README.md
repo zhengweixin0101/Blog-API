@@ -77,6 +77,41 @@
 
 ---
 
+### POST /api/system/updateAccount
+修改用户名或密码（需认证）
+
+**说明**:
+- 修改用户名或密码都需要提供当前密码验证
+- username 和 password 至少提供一个
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**请求体**:
+```json
+{
+  "username": "newadmin",        // 可选，修改用户名
+  "password": "newpassword",   // 可选，修改密码
+  "currentPassword": "oldpass"    // 必填，当前密码
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "账号信息更新成功"
+}
+```
+
+**错误响应**:
+- `400` - 未提供当前密码
+- `401` - 当前密码错误
+- `404` - 账号不存在
+
+---
+
 ## Token 管理接口
 
 ### GET /api/tokens/list
