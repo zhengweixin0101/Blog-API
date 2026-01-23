@@ -659,21 +659,22 @@ GET /api/talks/get?sort=asc
 ### Config (配置)
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| key | string | 配置键（主键） |
-| value | JSONB | 配置值（JSON 格式） |
+| key | string | 配置键名 (主键) |
+| value | JSONB | 配置值 (JSONB 格式) |
+| description | string \| null | 配置描述 |
 | updated_at | string | 更新时间 |
 
-**预定义配置键**:
-- `admin` - 管理员配置，包含 `username`、`password`
-
-### Token (令牌)
+### Token (访问令牌)
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| id | number | Token ID |
-| token | string | Token 值（唯一） |
-| name | string | Token 名称 |
-| description | string \| null | Token 描述 |
-| expires_at | string | 过期时间 |
+| id | number | 令牌 ID |
+| token | string | 令牌值 |
+| name | string \| null | 令牌名称 |
+| description | string \| null | 令牌描述 |
+| expires_at | string \| null | 过期时间 |
 | created_at | string | 创建时间 |
 | last_used_at | string \| null | 最后使用时间 |
-| is_active | boolean | 是否有效 |
+| is_active | boolean | 是否激活 |
+
+**预定义配置键**:
+- `admin` - 管理员配置，包含 `username`、`password`，description: `管理员账号配置`

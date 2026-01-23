@@ -64,8 +64,8 @@ router.post('/', asyncHandler(async (req, res) => {
         };
 
         await db.query(
-            `INSERT INTO configs (key, value) VALUES ($1, $2)`,
-            ['admin', JSON.stringify(adminConfig)]
+            `INSERT INTO configs (key, value, description) VALUES ($1, $2, $3)`,
+            ['admin', JSON.stringify(adminConfig), '管理员账号配置']
         );
 
         // 创建 token 记录

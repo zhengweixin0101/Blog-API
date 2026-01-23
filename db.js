@@ -120,6 +120,7 @@ async function init() {
         CREATE TABLE IF NOT EXISTS configs (
             key TEXT PRIMARY KEY,
             value JSONB NOT NULL DEFAULT '{}'::jsonb,
+            description TEXT,
             updated_at TIMESTAMP DEFAULT NOW()
         );
 
