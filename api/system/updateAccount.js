@@ -59,9 +59,25 @@ router.post('/', asyncHandler(async (req, res) => {
     // 更新 Redis 缓存
     await redis.set(CacheKeys.configKey('admin'), JSON.stringify(updatedConfig), 'EX', 3600);
 
+    // 修改用户名或密码后删除所有 token
+    if (username || password) {
+        let cursor = '0';
+        const deletedTokens = [];
+        do {
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.TOKENS_PATTERN, 'COUNT', 100);
+            cursor = nextCursor;
+            if (keys.length > 0) {
+                for (const key of keys) {
+                    await redis.del(key);
+                    deletedTokens.push(key);
+                }
+            }
+        } while (cursor !== '0');
+    }
+
     res.json({
         success: true,
-        message: '账号信息更新成功'
+        message: '账号信息更新成功，请重新登录',
     });
 }));
 
