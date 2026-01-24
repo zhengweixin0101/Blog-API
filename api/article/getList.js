@@ -37,10 +37,7 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const cacheKey = CacheKeys.postListKey(all, fields, page, pageSize);
 
-    let cached;
-    if (redis) {
-        cached = await redis.get(cacheKey);
-    }
+    const cached = await redis.get(cacheKey);
     if (cached) {
         const parsed = JSON.parse(cached);
         return res.json({
@@ -88,9 +85,7 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const { rows } = await db.query(query, params);
 
-    if (redis) {
-        await redis.set(cacheKey, JSON.stringify(rows), 'EX', Cache.TTL.POST_LIST);
-    }
+    await redis.set(cacheKey, JSON.stringify(rows), 'EX', Cache.TTL.POST_LIST);
 
     res.json({
         success: true,

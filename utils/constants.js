@@ -13,9 +13,17 @@ const CacheKeys = {
     // 说说相关缓存键
     TALKS_PREFIX: 'talks:',
 
+    // Token 相关缓存键
+    TOKEN_PREFIX: 'tokens:',
+    TOKEN_PATTERN: 'tokens:*',
+
+    // 配置相关缓存键
+    CONFIG_PREFIX: 'config:',
+
     // 缓存匹配模式（用于 SCAN 命令）
     POSTS_PATTERN: 'posts:*',
     TALKS_PATTERN: 'talks:*',
+    TOKENS_PATTERN: 'tokens:*',
 
     /**
      * 生成文章列表缓存键
@@ -81,6 +89,24 @@ const CacheKeys = {
         }
 
         return key;
+    },
+
+    /**
+     * 生成 token 缓存键
+     * @param {string} token - token 字符串
+     * @returns {string} 缓存键
+     */
+    tokenKey: (token) => {
+        return `tokens:${token}`;
+    },
+
+    /**
+     * 生成配置缓存键
+     * @param {string} key - 配置键
+     * @returns {string} 缓存键
+     */
+    configKey: (key) => {
+        return `config:${key}`;
     }
 };
 
@@ -97,11 +123,7 @@ const DBIndexes = {
     TALKS_TAGS: 'idx_talks_tags',
 
     // configs 表索引
-    CONFIGS_UPDATED_AT: 'idx_configs_updated_at',
-
-    // tokens 表索引
-    TOKENS_TOKEN: 'idx_tokens_token',
-    TOKENS_EXPIRES_AT: 'idx_tokens_expires_at'
+    CONFIGS_UPDATED_AT: 'idx_configs_updated_at'
 };
 
 module.exports = {

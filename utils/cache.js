@@ -8,8 +8,6 @@ const redis = db.redis;
  * 匹配模式：post:list*
  */
 async function clearPostListCache() {
-    if (!redis) return;
-
     try {
         let cursor = '0';
         do {
@@ -31,7 +29,7 @@ async function clearPostListCache() {
  * @param {string} slug - 文章的 slug
  */
 async function clearPostCache(slug) {
-    if (!redis || !slug) return;
+    if (!slug) return;
 
     try {
         await Promise.all([
@@ -48,8 +46,6 @@ async function clearPostCache(slug) {
  * 匹配模式：talks:*
  */
 async function clearTalksCache() {
-    if (!redis) return;
-
     try {
         let cursor = '0';
         do {

@@ -23,16 +23,14 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const cacheKey = CacheKeys.postDetailKey(slug, type === 'html');
 
-    if (redis) {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-            const parsed = JSON.parse(cached);
-            return res.json({
-                success: true,
-                message: '获取成功',
-                ...parsed
-            });
-        }
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+        const parsed = JSON.parse(cached);
+        return res.json({
+            success: true,
+            message: '获取成功',
+            ...parsed
+        });
     }
 
     const { rows } = await db.query(
@@ -69,14 +67,12 @@ router.get('/', asyncHandler(async (req, res) => {
         content,
     };
 
-    if (redis) {
-        await redis.set(
-            cacheKey,
-            JSON.stringify(responseData),
-            'EX',
-            Cache.TTL.POST_DETAIL
-        );
-    }
+    await redis.set(
+        cacheKey,
+        JSON.stringify(responseData),
+        'EX',
+        Cache.TTL.POST_DETAIL
+    );
 
     res.json({
         success: true,

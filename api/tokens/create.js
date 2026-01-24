@@ -6,6 +6,8 @@ const { asyncHandler } = require('../../middleware/errorHandler');
 const Joi = require('joi');
 const { validate } = require('../../middleware/validate');
 const { Auth } = require('../../utils/config');
+const { CacheKeys } = require('../../utils/constants');
+const redis = db.redis;
 
 const router = express.Router();
 
@@ -19,7 +21,8 @@ const createTokenSchema = Joi.object({
     description: Joi.string().max(500).allow('', null),
     expiresIn: Joi.number()
         .integer()
-        .allow(null) // 允许设置 null 表示永不过期
+        .min(1)
+        .default(Auth.TOKEN_EXPIRY)
 });
 
 /**
@@ -30,30 +33,38 @@ router.post('/', verifyAuth, validate(createTokenSchema), asyncHandler(async (re
     const { name, description, expiresIn } = req.body;
 
     const token = generateToken();
-    // 不传 expiresIn 时默认 3 天，传 null 时永不过期
-    const actualExpiresIn = expiresIn === undefined ? Auth.TOKEN_EXPIRY : expiresIn;
-    const tokenExpiresAt = actualExpiresIn === null
-        ? null
-        : new Date(Date.now() + actualExpiresIn);
+    const tokenExpiresAt = new Date(Date.now() + expiresIn);
 
-    const result = await db.query(
-        `INSERT INTO tokens (token, name, description, expires_at)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, name, description, expires_at, created_at`,
-        [token, name, description || null, tokenExpiresAt]
+    // 将 token 写入 Redis
+    const now = new Date();
+    const tokenData = {
+        id: Date.now(),
+        token: token,
+        name: name,
+        description: description || null,
+        expires_at: tokenExpiresAt.toISOString(),
+        created_at: now.toISOString(),
+        last_used_at: now.toISOString()
+    };
+
+    // 计算缓存 TTL（至少 60 秒）
+    const ttlSeconds = Math.max(
+        60,
+        Math.floor((tokenExpiresAt - new Date()) / 1000)
     );
+    await redis.set(CacheKeys.tokenKey(token), JSON.stringify(tokenData), 'EX', ttlSeconds);
 
     res.json({
         success: true,
         message: 'Token 创建成功',
         data: {
-            id: result.rows[0].id,
-            name: result.rows[0].name,
-            description: result.rows[0].description,
+            id: tokenData.id,
+            name: tokenData.name,
+            description: tokenData.description,
             token: token, // 只在创建时返回完整 token
-            expiresAt: result.rows[0].expires_at,
-            createdAt: result.rows[0].created_at,
-            expiresIn: actualExpiresIn
+            expiresAt: tokenData.expires_at,
+            createdAt: tokenData.created_at,
+            expiresIn
         }
     });
 }));

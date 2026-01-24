@@ -44,16 +44,14 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const cacheKey = CacheKeys.talksListKey(page, pageSize, tag, sort);
 
-    if (redis) {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-            const parsed = JSON.parse(cached);
-            return res.json({
-                success: true,
-                message: '获取成功',
-                ...parsed
-            });
-        }
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+        const parsed = JSON.parse(cached);
+        return res.json({
+            success: true,
+            message: '获取成功',
+            ...parsed
+        });
     }
 
     const params = [];
@@ -109,9 +107,7 @@ router.get('/', asyncHandler(async (req, res) => {
         totalPages: pageSize ? Math.ceil(total / pageSize) : 1,
     };
 
-    if (redis) {
-        await redis.set(cacheKey, JSON.stringify(responseData), 'EX', Cache.TTL.TALKS_LIST);
-    }
+    await redis.set(cacheKey, JSON.stringify(responseData), 'EX', Cache.TTL.TALKS_LIST);
 
     res.json({
         success: true,

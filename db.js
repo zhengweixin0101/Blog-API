@@ -21,12 +21,9 @@ pool.on('error', (err) => {
     console.error('❌ PostgreSQL error:', err);
 });
 
-let redis = null;
-if (process.env.REDIS_URL) {
-    redis = new Redis(process.env.REDIS_URL);
-    redis.on('connect', () => console.log('✅ Redis 连接成功'));
-    redis.on('error', (err) => console.error('❌ Redis error:', err));
-}
+let redis = new Redis(process.env.REDIS_URL);
+redis.on('connect', () => console.log('✅ Redis 连接成功'));
+redis.on('error', (err) => console.error('❌ Redis error:', err));
 
 /**
  * 关闭数据库连接
@@ -39,10 +36,8 @@ async function close() {
         console.log('✅ PostgreSQL 连接已关闭');
 
         // 关闭 Redis 连接
-        if (redis) {
-            await redis.quit();
-            console.log('✅ Redis 连接已关闭');
-        }
+        await redis.quit();
+        console.log('✅ Redis 连接已关闭');
     } catch (err) {
         console.error('❌ 关闭数据库连接时出错:', err);
         throw err;
@@ -52,33 +47,31 @@ async function close() {
 const { CacheKeys } = require('./utils/constants');
 
 async function init() {
-    if (redis) {
-        // 清除文章缓存
-        let cursor = '0';
-        do {
-            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.POSTS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
-            cursor = nextCursor;
-            if (keys.length > 0) {
-                await redis.del(keys);
-            }
-        } while (cursor !== '0');
+    // 清除文章缓存
+    let cursor = '0';
+    do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.POSTS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+            await redis.del(keys);
+        }
+    } while (cursor !== '0');
 
-        // 清除说说缓存
-        cursor = '0';
-        do {
-            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.TALKS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
-            cursor = nextCursor;
-            if (keys.length > 0) {
-                await redis.del(keys);
-            }
-        } while (cursor !== '0');
-        console.log('🧹 缓存已清除');
-    }
+    // 清除说说缓存
+    cursor = '0';
+    do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.TALKS_PATTERN, 'COUNT', Cache.SCAN_COUNT);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+            await redis.del(keys);
+        }
+    } while (cursor !== '0');
+    console.log('🧹 缓存已清除');
 
     const checkTablesQuery = `
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'configs', 'tokens');
+        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'configs');
     `;
     const result = await pool.query(checkTablesQuery);
     const existingTables = result.rows.map(r => r.table_name);
@@ -127,22 +120,6 @@ async function init() {
         CREATE INDEX IF NOT EXISTS ${DBIndexes.CONFIGS_UPDATED_AT} ON configs(updated_at DESC);
     `;
 
-    const createTokensTableQuery = `
-        CREATE TABLE IF NOT EXISTS tokens (
-            id SERIAL PRIMARY KEY,
-            token TEXT NOT NULL UNIQUE,
-            name TEXT,
-            description TEXT,
-            expires_at TIMESTAMP,
-            created_at TIMESTAMP DEFAULT NOW(),
-            last_used_at TIMESTAMP,
-            is_active BOOLEAN DEFAULT true
-        );
-
-        CREATE INDEX IF NOT EXISTS ${DBIndexes.TOKENS_TOKEN} ON tokens(token) WHERE is_active = true;
-        CREATE INDEX IF NOT EXISTS ${DBIndexes.TOKENS_EXPIRES_AT} ON tokens(expires_at) WHERE expires_at IS NOT NULL;
-    `;
-
     const newlyCreated = [];
 
     if (!existingTables.includes('articles')) {
@@ -158,11 +135,6 @@ async function init() {
     if (!existingTables.includes('configs')) {
         await pool.query(createAdminTableQuery);
         newlyCreated.push('configs');
-    }
-
-    if (!existingTables.includes('tokens')) {
-        await pool.query(createTokensTableQuery);
-        newlyCreated.push('tokens');
     }
 
     if (newlyCreated.length > 0) {

@@ -47,7 +47,6 @@ const updateAccountRoute = require('./api/system/updateAccount');
 const listTokensRoute = require('./api/tokens/list');
 const createTokenRoute = require('./api/tokens/create');
 const deleteTokenRoute = require('./api/tokens/delete');
-const toggleTokenRoute = require('./api/tokens/toggle');
 
 app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
 app.use('/api/system/updateAccount', verifyAuth, validate(updateAccountSchema), updateAccountRoute);
@@ -55,7 +54,6 @@ app.use('/api/system/updateAccount', verifyAuth, validate(updateAccountSchema), 
 app.use('/api/tokens/list', verifyAuth, listTokensRoute);
 app.use('/api/tokens/create', verifyAuth, createTokenRoute);
 app.use('/api/tokens/delete', verifyAuth, deleteTokenRoute);
-app.use('/api/tokens/toggle', verifyAuth, toggleTokenRoute);
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);

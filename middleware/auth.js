@@ -1,5 +1,7 @@
 const db = require('../db.js');
 const { asyncHandler } = require('./errorHandler');
+const { CacheKeys } = require('../utils/constants');
+const redis = db.redis;
 
 async function verifyAuth(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -16,56 +18,50 @@ async function verifyAuth(req, res, next) {
         token = authHeader.replace(/^Bearer\s+/i, '');
     }
 
-    // 从 tokens 表验证 token
-    const result = await db.query(
-        `SELECT id, token, name, description, expires_at, is_active
-         FROM tokens
-         WHERE token = $1 AND is_active = true`,
-        [token]
-    );
+    const tokenCacheKey = CacheKeys.tokenKey(token);
 
-    if (result.rows.length === 0) {
+    // 从 Redis 获取 token 数据
+    const tokenData = await redis.get(tokenCacheKey);
+    if (!tokenData) {
         const err = new Error('token无效');
         err.status = 401;
         throw err;
     }
 
-    const tokenData = result.rows[0];
+    const parsedTokenData = JSON.parse(tokenData);
 
-    // 处理可能为 null/undefined/字符串/Date 的过期字段
-    // expires_at 为 null 表示永不过期
-    if (tokenData.expires_at !== null) {
-        const expiresAt = new Date(tokenData.expires_at);
-        if (isNaN(expiresAt.getTime()) || expiresAt < new Date()) {
-            // token 已过期，直接删除
-            await db.query(
-                `DELETE FROM tokens WHERE id = $1`,
-                [tokenData.id]
-            );
-            const err = new Error('token已过期');
-            err.status = 401;
-            throw err;
-        }
+    // 检查过期时间
+    const expiresAt = new Date(parsedTokenData.expires_at);
+    if (isNaN(expiresAt.getTime()) || expiresAt < new Date()) {
+        // token 已过期，从 Redis 删除
+        await redis.del(tokenCacheKey);
+        const err = new Error('token已过期');
+        err.status = 401;
+        throw err;
     }
 
     // 获取管理员用户名
-    const adminResult = await db.query(
-        'SELECT value FROM configs WHERE key = $1',
-        ['admin']
-    );
-
-    const adminConfig = adminResult.rows[0].value;
+    const adminCacheKey = CacheKeys.configKey('admin');
+    let adminConfig = await redis.get(adminCacheKey);
+    if (adminConfig) {
+        adminConfig = JSON.parse(adminConfig);
+    } else {
+        const adminResult = await db.query(
+            'SELECT value FROM configs WHERE key = $1',
+            ['admin']
+        );
+        adminConfig = adminResult.rows[0].value;
+        await redis.set(adminCacheKey, JSON.stringify(adminConfig), 'EX', 3600);
+    }
 
     // 更新最后使用时间
-    await db.query(
-        `UPDATE tokens SET last_used_at = NOW() WHERE id = $1`,
-        [tokenData.id]
-    );
+    parsedTokenData.last_used_at = new Date().toISOString();
+    await redis.set(tokenCacheKey, JSON.stringify(parsedTokenData), 'EX', 3600);
 
     req.user = {
         username: adminConfig.username,
-        tokenId: tokenData.id,
-        tokenName: tokenData.name
+        tokenId: parsedTokenData.id,
+        tokenName: parsedTokenData.name
     };
     next();
 }

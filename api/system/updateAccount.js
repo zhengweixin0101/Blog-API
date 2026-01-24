@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const { CacheKeys } = require('../../utils/constants');
+const redis = db.redis;
 
 const router = express.Router();
 
@@ -53,6 +55,9 @@ router.post('/', asyncHandler(async (req, res) => {
          WHERE key = $2`,
         [JSON.stringify(updatedConfig), 'admin']
     );
+
+    // 更新 Redis 缓存
+    await redis.set(CacheKeys.configKey('admin'), JSON.stringify(updatedConfig), 'EX', 3600);
 
     res.json({
         success: true,

@@ -4,7 +4,7 @@
 
 - **Base URL**: `http://localhost:8000`
 - **数据格式**: 
-- **认证方式**: Bearer TokenJSON
+- **认证方式**: Bearer Token
 
 ## 统一响应格式
 
@@ -14,7 +14,7 @@
   "success": true,
   "message": "操作成功",
   "token": "...",           // 仅登录接口
-  "expiresIn": 86400000,    // 仅登录接口（毫秒）
+  "expiresIn": 259200000,    // 仅登录接口（毫秒）
   "article": { ... },       // 单个文章
   "talk": { ... },          // 单个说说
   "data": [...],            // 列表数据
@@ -47,7 +47,7 @@
 - 管理员信息存储在 `configs` 表中,key 为 `admin`
 - 仅支持单人个管理员用户
 - 每次登录都会创建一个新的 token，支持多 token 共存
-- Token 信息存储在 `tokens` 表中
+- Token 信息存储在 Redis 中
 
 **请求头**:
 - `Content-Type: application/json`
@@ -67,7 +67,7 @@
   "success": true,
   "message": "登录成功",
   "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
-  "expiresIn": 86400000
+  "expiresIn": 259200000
 }
 ```
 
@@ -133,7 +133,6 @@
       "expiresAt": "2026-01-24T10:30:00.000Z",
       "createdAt": "2026-01-23T10:30:00.000Z",
       "lastUsedAt": "2026-01-23T11:00:00.000Z",
-      "isActive": true,
       "tokenPreview": "a1b2c3d4..."
     }
   ]
@@ -154,9 +153,13 @@
 {
   "name": "Token Name",
   "description": "这是 Token 的说明",
-  "expiresIn": 604800000  // 可选，过期时间（毫秒），默认 86400000（24小时）
+  "expiresIn": 259200000  // 必填，过期时间（毫秒），默认 259200000（3天）
 }
 ```
+
+**说明**:
+- `expiresIn` 为必填字段，最小值为 1 毫秒
+- 不支持永不过期 token
 
 **响应示例**:
 ```json
@@ -170,7 +173,7 @@
     "token": "f5e6d7c8b9a0...",
     "expiresAt": "2026-01-30T10:30:00.000Z",
     "createdAt": "2026-01-23T10:30:00.000Z",
-    "expiresIn": 604800000
+    "expiresIn": 259200000
   }
 }
 ```
@@ -181,9 +184,9 @@
 ---
 
 ### DELETE /api/tokens/delete
-删除 token（需认证，物理删除）
+删除 token（需认证）
 
-**说明**: 从数据库中完全删除 token 记录
+**说明**: 从 Redis 中完全删除 token
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -201,41 +204,6 @@
 {
   "success": true,
   "message": "Token 'Token Name' 已删除"
-}
-```
-
-**错误响应**:
-- `404` - Token 不存在
-
----
-
-### POST /api/tokens/toggle
-启用或停用 token（需认证）
-
-**说明**: 切换 token 的启用状态，token 记录会保留在数据库中
-
-**请求头**:
-- `Authorization: Bearer <token>`
-- `Content-Type: application/json`
-
-**请求体**:
-```json
-{
-  "id": 2,
-  "isActive": false
-}
-```
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "message": "Token 'Token Name' 已停用。",
-  "data": {
-    "id": 2,
-    "name": "Token Name",
-    "isActive": false
-  }
 }
 ```
 
@@ -743,10 +711,9 @@ GET /api/talks/get?sort=asc
 | token | string | 令牌值 |
 | name | string \| null | 令牌名称 |
 | description | string \| null | 令牌描述 |
-| expires_at | string \| null | 过期时间 |
+| expires_at | string | 过期时间（必填） |
 | created_at | string | 创建时间 |
-| last_used_at | string \| null | 最后使用时间 |
-| is_active | boolean | 是否激活 |
+| last_used_at | string | 最后使用时间 |
 
 **预定义配置键**:
 - `admin` - 管理员配置，包含 `username`、`password`，description: `管理员账号配置`

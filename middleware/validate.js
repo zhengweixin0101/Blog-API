@@ -76,12 +76,6 @@ const deleteTokenSchema = Joi.object({
     id: Joi.number().integer().positive().required()
 });
 
-// Token 启用/停用验证
-const toggleTokenSchema = Joi.object({
-    id: Joi.number().integer().positive().required(),
-    isActive: Joi.boolean().required()
-});
-
 /**
  * 验证中间件
  * @param {Joi.Schema} schema - Joi 验证模式
@@ -121,6 +115,5 @@ module.exports = {
     editTalkSchema,
     deleteTalkSchema,
     updateAccountSchema,
-    deleteTokenSchema,
-    toggleTokenSchema
+    deleteTokenSchema
 };
