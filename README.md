@@ -180,8 +180,10 @@
 
 ---
 
-### DELETE /api/tokens/revoke
-删除 token（需认证）
+### DELETE /api/tokens/delete
+删除 token（需认证，物理删除）
+
+**说明**: 从数据库中完全删除 token 记录
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -199,6 +201,41 @@
 {
   "success": true,
   "message": "Token 'Token Name' 已删除"
+}
+```
+
+**错误响应**:
+- `404` - Token 不存在
+
+---
+
+### POST /api/tokens/toggle
+启用或停用 token（需认证）
+
+**说明**: 切换 token 的启用状态，token 记录会保留在数据库中
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**请求体**:
+```json
+{
+  "id": 2,
+  "isActive": false
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "Token 'Token Name' 已停用。",
+  "data": {
+    "id": 2,
+    "name": "Token Name",
+    "isActive": false
+  }
 }
 ```
 

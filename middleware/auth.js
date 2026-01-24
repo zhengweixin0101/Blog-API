@@ -37,6 +37,11 @@ async function verifyAuth(req, res, next) {
     if (tokenData.expires_at !== null) {
         const expiresAt = new Date(tokenData.expires_at);
         if (isNaN(expiresAt.getTime()) || expiresAt < new Date()) {
+            // token 已过期，直接删除
+            await db.query(
+                `DELETE FROM tokens WHERE id = $1`,
+                [tokenData.id]
+            );
             const err = new Error('token已过期');
             err.status = 401;
             throw err;
