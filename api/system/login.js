@@ -111,7 +111,7 @@ router.post('/', asyncHandler(async (req, res) => {
     await db.query(
         `INSERT INTO tokens (token, name, description, expires_at)
          VALUES ($1, $2, $3, $4)`,
-        [token, 'Login Token', '登录时自动创建', tokenExpiresAt]
+        [token, 'Login', '登录时自动创建', tokenExpiresAt]
     );
 
     // 登录成功，清除人机验证标记
