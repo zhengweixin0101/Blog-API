@@ -41,18 +41,11 @@ async function verifyAuth(req, res, next) {
     }
 
     // 获取管理员用户名
-    const adminCacheKey = CacheKeys.configKey('admin');
-    let adminConfig = await redis.get(adminCacheKey);
-    if (adminConfig) {
-        adminConfig = JSON.parse(adminConfig);
-    } else {
-        const adminResult = await db.query(
-            'SELECT value FROM configs WHERE key = $1',
-            ['admin']
-        );
-        adminConfig = adminResult.rows[0].value;
-        await redis.set(adminCacheKey, JSON.stringify(adminConfig), 'EX', 3600);
-    }
+    const adminResult = await db.query(
+        'SELECT value FROM configs WHERE key = $1',
+        ['admin']
+    );
+    const adminConfig = adminResult.rows[0].value;
 
     // 更新最后使用时间
     parsedTokenData.last_used_at = new Date().toISOString();

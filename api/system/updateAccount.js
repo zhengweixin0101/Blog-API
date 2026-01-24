@@ -56,9 +56,6 @@ router.post('/', asyncHandler(async (req, res) => {
         [JSON.stringify(updatedConfig), 'admin']
     );
 
-    // 更新 Redis 缓存
-    await redis.set(CacheKeys.configKey('admin'), JSON.stringify(updatedConfig), 'EX', 3600);
-
     // 修改用户名或密码后删除所有 token
     if (username || password) {
         let cursor = '0';
