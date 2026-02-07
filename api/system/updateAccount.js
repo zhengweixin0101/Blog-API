@@ -32,7 +32,7 @@ router.post('/', asyncHandler(async (req, res) => {
     // 验证当前密码
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, adminConfig.password);
     if (!isCurrentPasswordValid) {
-        const err = new Error('密码错误');
+        const err = new Error('密码错误，请确认后重试');
         err.status = 401;
         throw err;
     }
