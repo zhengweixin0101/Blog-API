@@ -45,7 +45,10 @@ const talkSchema = Joi.object({
     content: Joi.string().min(1).required(),
     location: Joi.string().allow(null, '').max(200).optional(),
     links: Joi.array().items(Joi.object()).optional(),
-    imgs: Joi.array().items(Joi.string()).optional(),
+    imgs: Joi.array().items(Joi.object({
+        alt: Joi.string().required(),
+        url: Joi.string().uri().required()
+    })).optional(),
     tags: Joi.array().items(Joi.string()).optional()
 });
 
@@ -55,7 +58,10 @@ const editTalkSchema = Joi.object({
     content: Joi.string().min(1).optional(),
     location: Joi.string().allow(null, '').max(200).optional(),
     links: Joi.array().items(Joi.object()).optional(),
-    imgs: Joi.array().items(Joi.string()).optional(),
+    imgs: Joi.array().items(Joi.object({
+        alt: Joi.string().required(),
+        url: Joi.string().uri().required()
+    })).optional(),
     tags: Joi.array().items(Joi.string()).optional()
 });
 
