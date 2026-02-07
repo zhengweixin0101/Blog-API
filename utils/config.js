@@ -30,9 +30,9 @@ const Cache = {
 const Database = {
     // 连接池配置
     POOL: {
-        MAX: 10,                         // 最大连接数
-        MIN: 0,                          // 最小连接数
-        IDLE_TIMEOUT_MS: 10000,         // 空闲连接超时（毫秒）
+        MAX: 50,                         // 最大连接数
+        MIN: 5,                          // 最小连接数
+        IDLE_TIMEOUT_MS: 30000,         // 空闲连接超时（毫秒）
         CONNECTION_TIMEOUT_MS: 10000,  // 连接超时（毫秒）
     },
 };

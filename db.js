@@ -11,10 +11,9 @@ const pool = new Pool({
     min: Database.POOL.MIN,
     idleTimeoutMillis: Database.POOL.IDLE_TIMEOUT_MS,
     connectionTimeoutMillis: Database.POOL.CONNECTION_TIMEOUT_MS,
-});
-
-pool.on('connect', () => {
-    console.log('✅ PostgreSQL 连接成功');
+    // 保持连接活跃
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
 });
 
 pool.on('error', (err) => {
@@ -47,6 +46,8 @@ async function close() {
 const { CacheKeys } = require('./utils/constants');
 
 async function init() {
+    console.log('✅ PostgreSQL 连接成功');
+
     // 清除文章缓存
     let cursor = '0';
     do {

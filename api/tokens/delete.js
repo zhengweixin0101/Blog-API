@@ -1,8 +1,6 @@
 const express = require('express');
 const db = require('../../db.js');
-const verifyAuth = require('../../middleware/auth');
 const { asyncHandler } = require('../../middleware/errorHandler');
-const { deleteTokenSchema, validate } = require('../../middleware/validate');
 const { CacheKeys } = require('../../utils/constants');
 const redis = db.redis;
 
@@ -12,7 +10,7 @@ const router = express.Router();
  * DELETE /api/tokens/delete - 删除 token
  * Body: { id }
  */
-router.delete('/', verifyAuth, validate(deleteTokenSchema), asyncHandler(async (req, res) => {
+router.delete('/', asyncHandler(async (req, res) => {
     const { id } = req.body;
 
     // 扫描所有 token 键，查找匹配 id 的 token

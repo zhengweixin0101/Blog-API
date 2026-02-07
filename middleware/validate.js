@@ -76,6 +76,28 @@ const deleteTokenSchema = Joi.object({
     id: Joi.number().integer().positive().required()
 });
 
+// Token 创建验证
+const createTokenSchema = Joi.object({
+    name: Joi.string().max(100).required(),
+    description: Joi.string().max(500).allow('', null),
+    expiresIn: Joi.number()
+        .integer()
+        .min(1)
+        .default(259200000)
+});
+
+// 设置配置验证
+const setConfigSchema = Joi.object({
+    key: Joi.string().min(1).max(200).required(),
+    value: Joi.any().required(),
+    description: Joi.string().allow(null, '').max(500).optional()
+});
+
+// 获取配置验证
+const getConfigSchema = Joi.object({
+    key: Joi.string().min(1).max(200).required()
+});
+
 /**
  * 验证中间件
  * @param {Joi.Schema} schema - Joi 验证模式
@@ -115,5 +137,8 @@ module.exports = {
     editTalkSchema,
     deleteTalkSchema,
     updateAccountSchema,
-    deleteTokenSchema
+    deleteTokenSchema,
+    createTokenSchema,
+    setConfigSchema,
+    getConfigSchema
 };

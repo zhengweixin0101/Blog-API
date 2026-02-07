@@ -1,10 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const db = require('../../db.js');
-const verifyAuth = require('../../middleware/auth');
 const { asyncHandler } = require('../../middleware/errorHandler');
-const Joi = require('joi');
-const { validate } = require('../../middleware/validate');
 const { Auth } = require('../../utils/config');
 const { CacheKeys } = require('../../utils/constants');
 const redis = db.redis;
@@ -15,21 +12,11 @@ function generateToken() {
     return crypto.randomBytes(32).toString('hex');
 }
 
-// 请求验证 schema
-const createTokenSchema = Joi.object({
-    name: Joi.string().max(100).required(),
-    description: Joi.string().max(500).allow('', null),
-    expiresIn: Joi.number()
-        .integer()
-        .min(1)
-        .default(Auth.TOKEN_EXPIRY)
-});
-
 /**
  * POST /api/tokens/create - 创建新 token
  * Body: { name, description?, expiresIn? }
  */
-router.post('/', verifyAuth, validate(createTokenSchema), asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
     const { name, description, expiresIn } = req.body;
 
     const token = generateToken();

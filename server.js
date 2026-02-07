@@ -24,7 +24,7 @@ const PORT = process.env.PORT || App.PORT;
 // 中间件
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
-const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema } = require('./middleware/validate');
+const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema, deleteTokenSchema, createTokenSchema, setConfigSchema, getConfigSchema } = require('./middleware/validate');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // 路由
@@ -48,12 +48,15 @@ const listTokensRoute = require('./api/tokens/list');
 const createTokenRoute = require('./api/tokens/create');
 const deleteTokenRoute = require('./api/tokens/delete');
 
-app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
-app.use('/api/system/updateAccount', verifyAuth, validate(updateAccountSchema), updateAccountRoute);
+const setConfigRoute = require('./api/config/set');
+const getConfigRoute = require('./api/config/get');
 
-app.use('/api/tokens/list', verifyAuth, listTokensRoute);
-app.use('/api/tokens/create', verifyAuth, createTokenRoute);
-app.use('/api/tokens/delete', verifyAuth, deleteTokenRoute);
+app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
+app.use('/api/system/updateAccount', verifyAuth, validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
+
+app.use('/api/tokens/list', verifyAuth, verifyTurnstile, listTokensRoute);
+app.use('/api/tokens/create', verifyAuth, validate(createTokenSchema), verifyTurnstile, createTokenRoute);
+app.use('/api/tokens/delete', verifyAuth, validate(deleteTokenSchema), verifyTurnstile, deleteTokenRoute);
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
@@ -67,6 +70,9 @@ app.use('/api/talks/get', getTalksRoute);
 app.use('/api/talks/edit', verifyAuth, validate(editTalkSchema), verifyTurnstile, editTalkRoute);
 app.use('/api/talks/add', verifyAuth, validate(talkSchema), verifyTurnstile, addTalkRoute);
 app.use('/api/talks/delete', verifyAuth, validate(deleteTalkSchema), verifyTurnstile, deleteTalkRoute);
+
+app.use('/api/config/set', verifyAuth, validate(setConfigSchema), verifyTurnstile, setConfigRoute);
+app.use('/api/config/get', verifyAuth, validate(getConfigSchema), verifyTurnstile, getConfigRoute);
 
 // 404 处理
 app.use(notFoundHandler);

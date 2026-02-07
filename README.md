@@ -17,6 +17,7 @@
   "expiresIn": 259200000,    // 仅登录接口（毫秒）
   "article": { ... },       // 单个文章
   "talk": { ... },          // 单个说说
+  "config": { ... },        // 单个配置
   "data": [...],            // 列表数据
   "allTags": [...],         // 所有标签（说说列表）
   "page": 1,
@@ -78,7 +79,7 @@
 ---
 
 ### POST /api/system/updateAccount
-修改用户名或密码（需认证）
+修改用户名或密码
 
 **说明**:
 - 修改用户名或密码都需要提供当前密码验证
@@ -115,7 +116,7 @@
 ## Token 管理接口
 
 ### GET /api/tokens/list
-获取所有 token 列表（需认证）
+获取所有 token 列表
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -142,7 +143,7 @@
 ---
 
 ### POST /api/tokens/create
-创建新 token（需认证）
+创建新 token
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -184,7 +185,7 @@
 ---
 
 ### DELETE /api/tokens/delete
-删除 token（需认证）
+删除 token
 
 **说明**: 从 Redis 中完全删除 token
 
@@ -209,6 +210,83 @@
 
 **错误响应**:
 - `404` - Token 不存在
+
+---
+
+## 配置接口
+
+### POST /api/config/set
+设置或修改配置
+
+**说明**:
+- 如果配置已存在则更新，不存在则创建
+- 配置存储在 `configs` 表中，使用 JSONB 格式存储值
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**请求体**:
+```json
+{
+  "key": "site_name",
+  "value": "我的博客",
+  "description": "站点名称",
+  "turnstileToken": "..."
+}
+```
+
+**说明**:
+- `key` - 必填，配置键名（1-200字符）
+- `value` - 必填，配置值（可以是任意类型，将被序列化为 JSON）
+- `description` - 可选，配置描述（0-500字符）
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "配置创建成功",
+  "data": {
+    "key": "site_name",
+    "value": "我的博客",
+    "description": "站点名称"
+  }
+}
+```
+
+**错误响应**:
+- `400` - 缺少必须的请求参数
+- `401` - 未认证或 token 过期
+
+---
+
+### GET /api/config/get
+获取配置
+
+**查询参数**:
+- `key` - 必填，配置键名
+
+**示例请求**:
+```
+GET /api/config/get?key=site_name
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "data": {
+    "key": "site_name",
+    "value": "我的博客",
+    "description": "站点名称",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**错误响应**:
+- `400` - 缺少必须的查询参数
+- `404` - 配置不存在
 
 ---
 
@@ -343,7 +421,7 @@ GET /api/article/all?sort=asc
 ---
 
 ### POST /api/article/add
-添加文章（需认证）
+添加文章
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -390,7 +468,7 @@ GET /api/article/all?sort=asc
 ---
 
 ### PUT /api/article/edit
-更新文章（需认证）
+更新文章
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -428,7 +506,7 @@ GET /api/article/all?sort=asc
 ---
 
 ### PUT /api/article/edit-slug
-修改文章 slug（需认证）
+修改文章 slug
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -459,7 +537,7 @@ GET /api/article/all?sort=asc
 ---
 
 ### DELETE /api/article/delete
-删除文章（需认证）
+删除文章
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -539,7 +617,7 @@ GET /api/talks/get?sort=asc
 ---
 
 ### POST /api/talks/add
-添加说说（需认证）
+添加说说
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -579,7 +657,7 @@ GET /api/talks/get?sort=asc
 ---
 
 ### PUT /api/talks/edit
-更新说说（需认证）
+更新说说
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -614,7 +692,7 @@ GET /api/talks/get?sort=asc
 ---
 
 ### DELETE /api/talks/delete
-删除说说（需认证）
+删除说说
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -717,3 +795,6 @@ GET /api/talks/get?sort=asc
 
 **预定义配置键**:
 - `admin` - 管理员配置，包含 `username`、`password`，description: `管理员账号配置`
+- `site_name` - 站点名称
+- `site_description` - 站点描述
+- 等等（可自定义任意配置键）

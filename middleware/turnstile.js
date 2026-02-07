@@ -79,7 +79,7 @@ async function verifyTurnstile(req, res, next) {
         return next();
     }
 
-    const token = req.body.turnstileToken || req.headers['x-turnstile-token'];
+    const token = (req.body && req.body.turnstileToken) || req.headers['x-turnstile-token'];
 
     // 如果标记需要验证，但没有提供 turnstileToken，要求验证
     if (shouldRequireVerification(token)) {
