@@ -42,13 +42,15 @@
 ## 认证接口
 
 ### POST /api/system/login
-管理员登录/注册（首次登录自动注册）
+管理员登录/注册
 
 **说明**:
+- 首次登录自动注册
 - 管理员信息存储在 `configs` 表中,key 为 `admin`
-- 仅支持单人个管理员用户
-- 每次登录都会创建一个新的 token，支持多 token 共存
-- Token 信息存储在 Redis 中
+- 仅支持单个用户
+- 只存在一个登录 Token，重新登录会覆盖原 Token
+- 可手动创建 Token，用于其他应用访问
+- Token 信息仅存储在 Redis 中
 
 **请求头**:
 - `Content-Type: application/json`
@@ -154,13 +156,13 @@
 {
   "name": "Token Name",
   "description": "这是 Token 的说明",
-  "expiresIn": 259200000  // 必填，过期时间（毫秒），默认 259200000（3天）
+  "expiresIn": 259200000
 }
 ```
 
 **说明**:
-- `expiresIn` 为必填字段，最小值为 1 毫秒
-- 不支持永不过期 token
+- `expiresIn` 过期时间（毫秒），未传该项时使用默认值（默认3天），最小值为 1 毫秒
+- 不支持永不过期 token（但可以设置超长过期时间，如：9999年）
 
 **响应示例**:
 ```json
@@ -187,7 +189,7 @@
 ### DELETE /api/tokens/delete
 删除 token
 
-**说明**: 从 Redis 中完全删除 token
+**说明**: 从 Redis 中删除 token
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -370,7 +372,7 @@ GET /api/article/get?slug=my-first-post&type=html
 ---
 
 ### GET /api/article/all
-获取所有文章（包含内容，需认证）
+获取所有文章（包含内容，可用于备份）
 
 **查询参数**:
 - `page` - 可选，页码（需与 pageSize 同时使用）
@@ -726,9 +728,7 @@ GET /api/talks/get?sort=asc
    - 请求体中的 `turnstileToken` 字段
    - 请求头中的 `x-turnstile-token` 字段
 
-**触发验证的场景**:
-- 多次登录失败
-- 可疑操作行为
+**触发验证的场景**: Token 验证失败后
 
 ---
 
@@ -755,7 +755,7 @@ GET /api/talks/get?sort=asc
 | id | number | 文章 ID |
 | slug | string | 文章唯一标识符 |
 | title | string | 文章标题 |
-| content | string | 文章内容（Markdown） |
+| content | string | 文章内容 |
 | description | string | 文章摘要 |
 | tags | string[] | 标签数组 |
 | published | boolean | 是否已发布 |
@@ -777,7 +777,7 @@ GET /api/talks/get?sort=asc
 ### Config (配置)
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| key | string | 配置键名 (主键) |
+| key | string | 配置键名 |
 | value | JSONB | 配置值 (JSONB 格式) |
 | description | string \| null | 配置描述 |
 | updated_at | string | 更新时间 |
@@ -789,12 +789,6 @@ GET /api/talks/get?sort=asc
 | token | string | 令牌值 |
 | name | string \| null | 令牌名称 |
 | description | string \| null | 令牌描述 |
-| expires_at | string | 过期时间（必填） |
+| expires_at | string | 过期时间 |
 | created_at | string | 创建时间 |
 | last_used_at | string | 最后使用时间 |
-
-**预定义配置键**:
-- `admin` - 管理员配置，包含 `username`、`password`，description: `管理员账号配置`
-- `site_name` - 站点名称
-- `site_description` - 站点描述
-- 等等（可自定义任意配置键）
