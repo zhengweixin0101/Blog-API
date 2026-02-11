@@ -18,10 +18,25 @@ async function verifyAuth(req, res, next) {
         token = authHeader.replace(/^Bearer\s+/i, '');
     }
 
-    const tokenCacheKey = CacheKeys.tokenKey(token);
+    // 优先检查登录 token
+    const loginTokenData = await redis.get(CacheKeys.LOGIN_TOKEN);
+    let tokenCacheKey, tokenData;
 
-    // 从 Redis 获取 token 数据
-    const tokenData = await redis.get(tokenCacheKey);
+    if (loginTokenData) {
+        const parsedLoginData = JSON.parse(loginTokenData);
+        if (parsedLoginData.token === token) {
+            // 是登录 token
+            tokenCacheKey = CacheKeys.LOGIN_TOKEN;
+            tokenData = loginTokenData;
+        }
+    }
+
+    // 不是登录 token，检查其他 token
+    if (!tokenData) {
+        tokenCacheKey = CacheKeys.tokenKey(token);
+        tokenData = await redis.get(tokenCacheKey);
+    }
+
     if (!tokenData) {
         const err = new Error('token无效');
         err.status = 401;
@@ -49,7 +64,7 @@ async function verifyAuth(req, res, next) {
 
     // 更新最后使用时间
     parsedTokenData.last_used_at = new Date().toISOString();
-    await redis.set(tokenCacheKey, JSON.stringify(parsedTokenData), 'EX', 3600);
+    await redis.set(tokenCacheKey, JSON.stringify(parsedTokenData));
 
     req.user = {
         username: adminConfig.username,

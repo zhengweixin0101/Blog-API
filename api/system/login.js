@@ -15,47 +15,6 @@ function generateToken() {
 }
 
 /**
- * 清理过期的 token
- */
-async function cleanupExpiredTokens() {
-    // 扫描所有 token 键
-    let cursor = '0';
-    let cleanedCount = 0;
-    do {
-        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.TOKENS_PATTERN, 'COUNT', 100);
-        cursor = nextCursor;
-        if (keys.length > 0) {
-            // 获取所有 token 数据
-            const values = await redis.mget(keys);
-            for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
-                const value = values[i];
-                if (value) {
-                    try {
-                        const tokenData = JSON.parse(value);
-                        // 检查是否过期
-                        if (tokenData.expires_at !== null) {
-                            const expiresAt = new Date(tokenData.expires_at);
-                            if (expiresAt < new Date()) {
-                                await redis.del(key);
-                                cleanedCount++;
-                            }
-                        }
-                    } catch (err) {
-                        // 忽略解析错误，删除无效数据
-                        await redis.del(key);
-                    }
-                }
-            }
-        }
-    } while (cursor !== '0');
-
-    if (cleanedCount > 0) {
-        console.log(`🧹 清理了 ${cleanedCount} 个过期的 token`);
-    }
-}
-
-/**
  * POST /api/system/login - 管理员登录/注册（使用首次登录的账号密码自动注册）
  * Body: { username, password, turnstileToken? }
  */
@@ -71,9 +30,6 @@ router.post('/', asyncHandler(async (req, res) => {
             needTurnstile: true
         });
     }
-
-    // 清理过期的 token
-    await cleanupExpiredTokens();
 
     // 从 configs 表获取管理员信息
     const result = await db.query(
@@ -97,6 +53,9 @@ router.post('/', asyncHandler(async (req, res) => {
             ['admin', JSON.stringify(adminConfig), '管理员账号配置']
         );
 
+        // 删除旧的登录 token
+        await redis.del(CacheKeys.LOGIN_TOKEN);
+
         // 将 token 写入 Redis
         const tokenData = {
             id: Date.now(),
@@ -107,7 +66,7 @@ router.post('/', asyncHandler(async (req, res) => {
             created_at: new Date().toISOString(),
             last_used_at: new Date().toISOString()
         };
-        await redis.set(CacheKeys.tokenKey(token), JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
+        await redis.set(CacheKeys.LOGIN_TOKEN, JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
 
         // 创建账号成功，清除人机验证标记
         turnstile.clearVerification();
@@ -141,6 +100,9 @@ router.post('/', asyncHandler(async (req, res) => {
     const token = generateToken();
     const tokenExpiresAt = new Date(Date.now() + Auth.TOKEN_EXPIRY);
 
+    // 删除旧的登录 token
+    await redis.del(CacheKeys.LOGIN_TOKEN);
+
     // 将 token 写入 Redis
     const tokenData = {
         id: Date.now(),
@@ -151,7 +113,7 @@ router.post('/', asyncHandler(async (req, res) => {
         created_at: new Date().toISOString(),
         last_used_at: new Date().toISOString()
     };
-    await redis.set(CacheKeys.tokenKey(token), JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
+    await redis.set(CacheKeys.LOGIN_TOKEN, JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
 
     // 登录成功，清除人机验证标记
     turnstile.clearVerification();

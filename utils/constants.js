@@ -16,6 +16,7 @@ const CacheKeys = {
     // Token 相关缓存键
     TOKEN_PREFIX: 'tokens:',
     TOKEN_PATTERN: 'tokens:*',
+    LOGIN_TOKEN: 'tokens:login',
 
     // 配置相关缓存键
     CONFIG_PREFIX: 'config:',
