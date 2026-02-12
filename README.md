@@ -3,8 +3,64 @@
 ## 基础信息
 
 - **Base URL**: `http://localhost:8000`
-- **数据格式**: 
+- **数据格式**:
 - **认证方式**: Bearer Token
+
+## 权限说明
+
+系统支持基于 Token 的权限管理机制，用于控制不同接口的访问权限。
+
+### 权限类型
+
+| 权限 | 说明 |
+|------|------|
+| `article:write` | 文章添加、编辑、修改slug |
+| `article:delete` | 文章删除 |
+| `talk:write` | 说说添加、编辑 |
+| `talk:delete` | 说说删除 |
+| `super` | 超级权限 |
+
+### 接口权限要求
+
+| 接口 | 权限要求 |
+|------|---------|
+| `/api/system/login` | 无需认证 |
+| `/api/system/updateAccount` | `super` |
+| `/api/tokens/list` | `super` |
+| `/api/tokens/create` | `super` |
+| `/api/tokens/delete` | `super` |
+| `/api/config/set` | `super` |
+| `/api/config/get` | `super` |
+| `/api/article/get` | 公开 |
+| `/api/article/list` | 公开 |
+| `/api/article/all` | 任意有效Token |
+| `/api/article/add` | `article:write` |
+| `/api/article/edit` | `article:write` |
+| `/api/article/delete` | `article:delete` |
+| `/api/article/edit-slug` | `article:write` |
+| `/api/talks/get` | 公开 |
+| `/api/talks/add` | `talk:write` |
+| `/api/talks/edit` | `talk:write` |
+| `/api/talks/delete` | `talk:delete` |
+
+### 创建自定义权限Token
+
+```bash
+curl -X POST http://localhost:8000/api/tokens/create \
+  -H "Authorization: Bearer <your_super_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "文章编辑Token",
+    "description": "用于管理文章的Token",
+    "expiresIn": 259200000,
+    "permissions": ["article:write", "article:delete"]
+  }'
+```
+
+**注意**:
+- 只有 Super 权限的Token才能创建Token
+- 登录自动创建的 Token 权限为 `super`
+- 无法手动创建具有`super`权限的Token
 
 ## 统一响应格式
 
@@ -86,6 +142,7 @@
 **说明**:
 - 修改用户名或密码都需要提供当前密码验证
 - username 和 password 至少提供一个
+- 修改后需要重新登录
 
 **请求头**:
 - `Authorization: Bearer <token>`
@@ -104,13 +161,14 @@
 ```json
 {
   "success": true,
-  "message": "账号信息更新成功"
+  "message": "账号信息更新成功，请重新登录"
 }
 ```
 
 **错误响应**:
 - `400` - 未提供当前密码
 - `401` - 当前密码错误
+- `403` - 权限不足
 - `404` - 账号不存在
 
 ---
@@ -136,11 +194,15 @@
       "expiresAt": "2026-01-24T10:30:00.000Z",
       "createdAt": "2026-01-23T10:30:00.000Z",
       "lastUsedAt": "2026-01-23T11:00:00.000Z",
+      "permissions": ["super"],
       "tokenPreview": "a1b2c3d4..."
     }
   ]
 }
 ```
+
+**错误响应**:
+- `403` - 权限不足
 
 ---
 
@@ -156,12 +218,16 @@
 {
   "name": "Token Name",
   "description": "这是 Token 的说明",
-  "expiresIn": 259200000
+  "expiresIn": 259200000,
+  "permissions": ["article:write", "article:delete"]
 }
 ```
 
 **说明**:
-- `expiresIn` 过期时间（毫秒），未传该项时使用默认值（默认3天），最小值为 1 毫秒
+- `name` - 必填，Token名称（1-100字符）
+- `description` - 可选，Token描述（0-500字符）
+- `expiresIn` - 过期时间（毫秒），未传该项时使用默认值（默认3天），最小值为 1 毫秒
+- `permissions` - 权限数组，可选值：`article:write`、`article:delete`、`talk:write`、`talk:delete`。未传该项时默认为全部权限（`["article:write", "article:delete", "talk:write", "talk:delete"]`）
 - 不支持永不过期 token（但可以设置超长过期时间，如：9999年）
 
 **响应示例**:
@@ -176,13 +242,15 @@
     "token": "f5e6d7c8b9a0...",
     "expiresAt": "2026-01-30T10:30:00.000Z",
     "createdAt": "2026-01-23T10:30:00.000Z",
-    "expiresIn": 259200000
+    "expiresIn": 259200000,
+    "permissions": ["article:write", "article:delete"]
   }
 }
 ```
 
 **错误响应**:
 - `400` - 请求参数验证失败
+- `403` - 权限不足
 
 ---
 
@@ -212,6 +280,7 @@
 
 **错误响应**:
 - `404` - Token 不存在
+- `403` - 权限不足
 
 ---
 
@@ -259,6 +328,7 @@
 **错误响应**:
 - `400` - 缺少必须的请求参数
 - `401` - 未认证或 token 过期
+- `403` - 权限不足
 
 ---
 
@@ -267,6 +337,9 @@
 
 **查询参数**:
 - `key` - 必填，配置键名
+
+**请求头**:
+- `Authorization: Bearer <token>`
 
 **示例请求**:
 ```
@@ -288,6 +361,7 @@ GET /api/config/get?key=site_name
 
 **错误响应**:
 - `400` - 缺少必须的查询参数
+- `403` - 权限不足
 - `404` - 配置不存在
 
 ---
@@ -465,6 +539,7 @@ GET /api/article/all?sort=asc
 
 **错误响应**:
 - `401` - 未认证或 token 过期
+- `403` - 权限不足
 - `409` - slug 已存在
 
 ---
@@ -505,6 +580,11 @@ GET /api/article/all?sort=asc
 }
 ```
 
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `404` - 文章不存在
+
 ---
 
 ### PUT /api/article/edit-slug
@@ -536,6 +616,12 @@ GET /api/article/all?sort=asc
 }
 ```
 
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `404` - 文章不存在
+- `409` - 新slug已存在
+
 ---
 
 ### DELETE /api/article/delete
@@ -560,6 +646,11 @@ GET /api/article/all?sort=asc
   "message": "文章 'my-first-post' 删除成功"
 }
 ```
+
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `404` - 文章不存在
 
 ---
 
@@ -656,6 +747,10 @@ GET /api/talks/get?sort=asc
 }
 ```
 
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+
 ---
 
 ### PUT /api/talks/edit
@@ -691,6 +786,11 @@ GET /api/talks/get?sort=asc
 }
 ```
 
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `404` - 说说不存在
+
 ---
 
 ### DELETE /api/talks/delete
@@ -715,6 +815,11 @@ GET /api/talks/get?sort=asc
   "message": "说说 '1' 删除成功"
 }
 ```
+
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `404` - 说说不存在
 
 ---
 
@@ -789,6 +894,7 @@ GET /api/talks/get?sort=asc
 | token | string | 令牌值 |
 | name | string \| null | 令牌名称 |
 | description | string \| null | 令牌描述 |
+| permissions | string[] | 权限数组 |
 | expires_at | string | 过期时间 |
 | created_at | string | 创建时间 |
 | last_used_at | string | 最后使用时间 |

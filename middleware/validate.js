@@ -89,7 +89,15 @@ const createTokenSchema = Joi.object({
     expiresIn: Joi.number()
         .integer()
         .min(1)
-        .default(259200000)
+        .default(259200000),
+    permissions: Joi.array().items(
+        Joi.string().valid(
+            'article:write',
+            'article:delete',
+            'talk:write',
+            'talk:delete'
+        )
+    ).min(1).default(['article:write', 'article:delete', 'talk:write', 'talk:delete'])
 });
 
 // 设置配置验证

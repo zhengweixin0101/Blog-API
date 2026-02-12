@@ -11,7 +11,7 @@ const redis = db.redis;
 const router = express.Router();
 
 function generateToken() {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(Auth.TOKEN_LENGTH / 2).toString('hex');
 }
 
 /**
@@ -64,7 +64,8 @@ router.post('/', asyncHandler(async (req, res) => {
             description: '登录时自动创建',
             expires_at: tokenExpiresAt.toISOString(),
             created_at: new Date().toISOString(),
-            last_used_at: new Date().toISOString()
+            last_used_at: new Date().toISOString(),
+            permissions: ['super']
         };
         await redis.set(CacheKeys.LOGIN_TOKEN, JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
 
@@ -111,7 +112,8 @@ router.post('/', asyncHandler(async (req, res) => {
         description: '登录时自动创建',
         expires_at: tokenExpiresAt.toISOString(),
         created_at: new Date().toISOString(),
-        last_used_at: new Date().toISOString()
+        last_used_at: new Date().toISOString(),
+        permissions: ['super']
     };
     await redis.set(CacheKeys.LOGIN_TOKEN, JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
 

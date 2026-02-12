@@ -7,7 +7,7 @@
  */
 const Auth = {
     TOKEN_EXPIRY: 3 * 24 * 60 * 60 * 1000, // Token 默认有效期（毫秒），登录和未传 expiresIn 时使用
-    TOKEN_LENGTH: 64,                     // Token 长度
+    TOKEN_LENGTH: 32,                     // Token 长度
 };
 
 /**

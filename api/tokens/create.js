@@ -9,15 +9,15 @@ const redis = db.redis;
 const router = express.Router();
 
 function generateToken() {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(Auth.TOKEN_LENGTH / 2).toString('hex');
 }
 
 /**
  * POST /api/tokens/create - 创建新 token
- * Body: { name, description?, expiresIn? }
+ * Body: { name, description?, expiresIn?, permissions }
  */
 router.post('/', asyncHandler(async (req, res) => {
-    const { name, description, expiresIn } = req.body;
+    const { name, description, expiresIn, permissions } = req.body;
 
     const token = generateToken();
     const tokenExpiresAt = new Date(Date.now() + expiresIn);
@@ -31,7 +31,8 @@ router.post('/', asyncHandler(async (req, res) => {
         description: description || null,
         expires_at: tokenExpiresAt.toISOString(),
         created_at: now.toISOString(),
-        last_used_at: now.toISOString()
+        last_used_at: now.toISOString(),
+        permissions: permissions
     };
 
     // 计算缓存 TTL（至少 60 秒）
@@ -51,7 +52,8 @@ router.post('/', asyncHandler(async (req, res) => {
             token: token, // 只在创建时返回完整 token
             expiresAt: tokenData.expires_at,
             createdAt: tokenData.created_at,
-            expiresIn
+            expiresIn,
+            permissions
         }
     });
 }));

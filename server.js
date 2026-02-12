@@ -26,6 +26,7 @@ const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
 const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema, deleteTokenSchema, createTokenSchema, setConfigSchema, getConfigSchema } = require('./middleware/validate');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { requirePermission, requireValidToken } = require('./middleware/permission');
 
 // 路由
 const getArticleRoute = require('./api/article/getArticle');
@@ -52,27 +53,27 @@ const setConfigRoute = require('./api/config/set');
 const getConfigRoute = require('./api/config/get');
 
 app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
-app.use('/api/system/updateAccount', verifyAuth, validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
+app.use('/api/system/updateAccount', verifyAuth, requirePermission('super'), validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
 
-app.use('/api/tokens/list', verifyAuth, verifyTurnstile, listTokensRoute);
-app.use('/api/tokens/create', verifyAuth, validate(createTokenSchema), verifyTurnstile, createTokenRoute);
-app.use('/api/tokens/delete', verifyAuth, validate(deleteTokenSchema), verifyTurnstile, deleteTokenRoute);
+app.use('/api/tokens/list', verifyAuth, requirePermission('super'), verifyTurnstile, listTokensRoute);
+app.use('/api/tokens/create', verifyAuth, requirePermission('super'), validate(createTokenSchema), verifyTurnstile, createTokenRoute);
+app.use('/api/tokens/delete', verifyAuth, requirePermission('super'), validate(deleteTokenSchema), verifyTurnstile, deleteTokenRoute);
 
 app.use('/api/article/get', getArticleRoute);
 app.use('/api/article/list', getListRoute);
-app.use('/api/article/all', verifyAuth, verifyTurnstile, getAllRoute);
-app.use('/api/article/add', verifyAuth, validate(articleSchema), verifyTurnstile, addArticleRoute);
-app.use('/api/article/edit', verifyAuth, validate(editArticleSchema), verifyTurnstile, editArticleRoute);
-app.use('/api/article/delete', verifyAuth, validate(deleteArticleSchema), verifyTurnstile, deleteArticleRoute);
-app.use('/api/article/edit-slug', verifyAuth, validate(editSlugSchema), verifyTurnstile, editSlugRoute);
+app.use('/api/article/all', requireValidToken, verifyTurnstile, getAllRoute);
+app.use('/api/article/add', verifyAuth, requirePermission('article:write'), validate(articleSchema), verifyTurnstile, addArticleRoute);
+app.use('/api/article/edit', verifyAuth, requirePermission('article:write'), validate(editArticleSchema), verifyTurnstile, editArticleRoute);
+app.use('/api/article/delete', verifyAuth, requirePermission('article:delete'), validate(deleteArticleSchema), verifyTurnstile, deleteArticleRoute);
+app.use('/api/article/edit-slug', verifyAuth, requirePermission('article:write'), validate(editSlugSchema), verifyTurnstile, editSlugRoute);
 
 app.use('/api/talks/get', getTalksRoute);
-app.use('/api/talks/edit', verifyAuth, validate(editTalkSchema), verifyTurnstile, editTalkRoute);
-app.use('/api/talks/add', verifyAuth, validate(talkSchema), verifyTurnstile, addTalkRoute);
-app.use('/api/talks/delete', verifyAuth, validate(deleteTalkSchema), verifyTurnstile, deleteTalkRoute);
+app.use('/api/talks/edit', verifyAuth, requirePermission('talk:write'), validate(editTalkSchema), verifyTurnstile, editTalkRoute);
+app.use('/api/talks/add', verifyAuth, requirePermission('talk:write'), validate(talkSchema), verifyTurnstile, addTalkRoute);
+app.use('/api/talks/delete', verifyAuth, requirePermission('talk:delete'), validate(deleteTalkSchema), verifyTurnstile, deleteTalkRoute);
 
-app.use('/api/config/set', verifyAuth, validate(setConfigSchema), verifyTurnstile, setConfigRoute);
-app.use('/api/config/get', verifyAuth, validate(getConfigSchema), verifyTurnstile, getConfigRoute);
+app.use('/api/config/set', verifyAuth, requirePermission('super'), validate(setConfigSchema), verifyTurnstile, setConfigRoute);
+app.use('/api/config/get', verifyAuth, requirePermission('super'), validate(getConfigSchema), verifyTurnstile, getConfigRoute);
 
 // 404 处理
 app.use(notFoundHandler);

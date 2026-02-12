@@ -1,6 +1,7 @@
 const db = require('../db.js');
 const { asyncHandler } = require('./errorHandler');
 const { CacheKeys } = require('../utils/constants');
+const { hasPermission, Permissions } = require('./permission');
 const redis = db.redis;
 
 async function verifyAuth(req, res, next) {
@@ -66,10 +67,12 @@ async function verifyAuth(req, res, next) {
     parsedTokenData.last_used_at = new Date().toISOString();
     await redis.set(tokenCacheKey, JSON.stringify(parsedTokenData));
 
+    // 构建用户信息
     req.user = {
         username: adminConfig.username,
         tokenId: parsedTokenData.id,
-        tokenName: parsedTokenData.name
+        tokenName: parsedTokenData.name,
+        permissions: parsedTokenData.permissions || [Permissions.SUPER]
     };
     next();
 }

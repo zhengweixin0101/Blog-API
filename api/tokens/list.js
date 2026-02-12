@@ -33,6 +33,7 @@ router.get('/', verifyAuth, asyncHandler(async (req, res) => {
                             expiresAt: tokenData.expires_at,
                             createdAt: tokenData.created_at,
                             lastUsedAt: tokenData.last_used_at,
+                            permissions: tokenData.permissions || [],
                             // 隐藏完整 token，只显示前 8 位
                             tokenPreview: tokenData.token ? `${tokenData.token.substring(0, 8)}...` : null
                         });
