@@ -2,7 +2,8 @@ const express = require('express');
 const crypto = require('crypto');
 const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
-const { Auth, CacheKeys } = require('../../utils/config');
+const { Auth } = require('../../utils/config');
+const { CacheKeys } = require('../../utils/constants');
 
 const redis = db.redis;
 
