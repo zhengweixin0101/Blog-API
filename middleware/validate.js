@@ -67,7 +67,10 @@ const editTalkSchema = Joi.object({
 
 // 删除说说验证
 const deleteTalkSchema = Joi.object({
-    id: Joi.number().integer().positive().required()
+    id: Joi.alternatives().try(
+        Joi.number().integer().positive(),
+        Joi.string()
+    ).required()
 });
 
 // 修改账号验证

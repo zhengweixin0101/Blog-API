@@ -29,51 +29,95 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { requirePermission, requireValidToken } = require('./middleware/permission');
 
 // 路由
-const getArticleRoute = require('./api/article/getArticle');
-const getListRoute = require('./api/article/getList');
-const getAllRoute = require('./api/article/getAll');
-const deleteArticleRoute = require('./api/article/deleteArticle');
-const addArticleRoute = require('./api/article/addArticle');
-const editArticleRoute = require('./api/article/editArticle');
-const editSlugRoute = require('./api/article/editSlug');
-
-const getTalksRoute = require('./api/talks/get');
-const editTalkRoute = require('./api/talks/edit');
-const addTalkRoute = require('./api/talks/add');
-const deleteTalkRoute = require('./api/talks/delete');
-
+const articleRoute = require('./api/article');
+const talksRoute = require('./api/talks');
 const loginRoute = require('./api/system/login');
 const updateAccountRoute = require('./api/system/updateAccount');
-
-const listTokensRoute = require('./api/tokens/list');
-const createTokenRoute = require('./api/tokens/create');
-const deleteTokenRoute = require('./api/tokens/delete');
-
-const setConfigRoute = require('./api/config/set');
-const getConfigRoute = require('./api/config/get');
-
+const tokensRoute = require('./api/system/tokens');
+const configRoute = require('./api/system/config');
+  
 app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
 app.use('/api/system/updateAccount', verifyAuth, requirePermission('super'), validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
 
-app.use('/api/tokens/list', verifyAuth, requirePermission('super'), verifyTurnstile, listTokensRoute);
-app.use('/api/tokens/create', verifyAuth, requirePermission('super'), validate(createTokenSchema), verifyTurnstile, createTokenRoute);
-app.use('/api/tokens/delete', verifyAuth, requirePermission('super'), validate(deleteTokenSchema), verifyTurnstile, deleteTokenRoute);
+app.use('/api/system/tokens', verifyAuth, requirePermission('super'), (req, res, next) => {
+    if (req.method === 'GET') {
+        return next();
+    }
+    
+    if (req.method === 'POST') {
+        return validate(createTokenSchema)(req, res, next);
+    }
+    
+    if (req.method === 'DELETE') {
+        return validate(deleteTokenSchema)(req, res, next);
+    }
+    
+    next();
+}, verifyTurnstile, tokensRoute);
 
-app.use('/api/article/get', getArticleRoute);
-app.use('/api/article/list', getListRoute);
-app.use('/api/article/all', requireValidToken, verifyTurnstile, getAllRoute);
-app.use('/api/article/add', verifyAuth, requirePermission('article:write'), validate(articleSchema), verifyTurnstile, addArticleRoute);
-app.use('/api/article/edit', verifyAuth, requirePermission('article:write'), validate(editArticleSchema), verifyTurnstile, editArticleRoute);
-app.use('/api/article/delete', verifyAuth, requirePermission('article:delete'), validate(deleteArticleSchema), verifyTurnstile, deleteArticleRoute);
-app.use('/api/article/edit-slug', verifyAuth, requirePermission('article:write'), validate(editSlugSchema), verifyTurnstile, editSlugRoute);
+app.use('/api/system/config', verifyAuth, requirePermission('super'), (req, res, next) => {
+    if (req.method === 'POST') {
+        return validate(setConfigSchema)(req, res, next);
+    }
+    
+    if (req.method === 'GET') {
+        return validate(getConfigSchema)(req, res, next);
+    }
+    
+    next();
+}, verifyTurnstile, configRoute);
 
-app.use('/api/talks/get', getTalksRoute);
-app.use('/api/talks/edit', verifyAuth, requirePermission('talk:write'), validate(editTalkSchema), verifyTurnstile, editTalkRoute);
-app.use('/api/talks/add', verifyAuth, requirePermission('talk:write'), validate(talkSchema), verifyTurnstile, addTalkRoute);
-app.use('/api/talks/delete', verifyAuth, requirePermission('talk:delete'), validate(deleteTalkSchema), verifyTurnstile, deleteTalkRoute);
+app.use('/api/articles', (req, res, next) => {
+    if (req.method === 'GET') {
+        return next();
+    }
+    
+    verifyAuth(req, res, () => {
+        if (req.method === 'POST') {
+            requirePermission('article:write')(req, res, () => {
+                validate(articleSchema)(req, res, next);
+            });
+        } else if (req.method === 'PUT') {
+            requirePermission('article:write')(req, res, () => {
+                validate(editArticleSchema)(req, res, next);
+            });
+        } else if (req.method === 'PATCH') {
+            requirePermission('article:write')(req, res, () => {
+                validate(editSlugSchema)(req, res, next);
+            });
+        } else if (req.method === 'DELETE') {
+            requirePermission('article:delete')(req, res, () => {
+                validate(deleteArticleSchema)(req, res, next);
+            });
+        } else {
+            next();
+        }
+    });
+}, verifyTurnstile, articleRoute);
 
-app.use('/api/config/set', verifyAuth, requirePermission('super'), validate(setConfigSchema), verifyTurnstile, setConfigRoute);
-app.use('/api/config/get', verifyAuth, requirePermission('super'), validate(getConfigSchema), verifyTurnstile, getConfigRoute);
+app.use('/api/talks', (req, res, next) => {
+    if (req.method === 'GET') {
+        return next();
+    }
+
+    verifyAuth(req, res, () => {
+        requirePermission('talk:write')(req, res, () => {
+            if (req.method === 'POST') {
+                return validate(talkSchema)(req, res, next);
+            }
+
+            if (req.method === 'PUT') {
+                return validate(editTalkSchema)(req, res, next);
+            }
+
+            if (req.method === 'DELETE') {
+                return validate(deleteTalkSchema)(req, res, next);
+            }
+
+            next();
+        });
+    });
+}, verifyTurnstile, talksRoute);
 
 // 404 处理
 app.use(notFoundHandler);

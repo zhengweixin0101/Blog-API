@@ -24,29 +24,28 @@
 
 | 接口 | 权限要求 |
 |------|---------|
-| `/api/system/login` | 无需认证 |
-| `/api/system/updateAccount` | `super` |
-| `/api/tokens/list` | `super` |
-| `/api/tokens/create` | `super` |
-| `/api/tokens/delete` | `super` |
-| `/api/config/set` | `super` |
-| `/api/config/get` | `super` |
-| `/api/article/get` | 公开 |
-| `/api/article/list` | 公开 |
-| `/api/article/all` | 任意有效Token |
-| `/api/article/add` | `article:write` |
-| `/api/article/edit` | `article:write` |
-| `/api/article/delete` | `article:delete` |
-| `/api/article/edit-slug` | `article:write` |
-| `/api/talks/get` | 公开 |
-| `/api/talks/add` | `talk:write` |
-| `/api/talks/edit` | `talk:write` |
-| `/api/talks/delete` | `talk:delete` |
+| `POST /api/system/login` | 无需认证 |
+| `POST /api/system/updateAccount` | `super` |
+| `GET /api/system/tokens` | `super` |
+| `POST /api/system/tokens` | `super` |
+| `DELETE /api/system/tokens` | `super` |
+| `GET /api/system/config` | `super` |
+| `POST /api/system/config` | `super` |
+| `GET /api/articles/:slug` | 公开 |
+| `GET /api/articles` | 公开 |
+| `POST /api/articles` | `article:write` |
+| `PUT /api/articles` | `article:write` |
+| `PATCH /api/articles` | `article:write` |
+| `DELETE /api/articles` | `article:delete` |
+| `GET /api/talks` | 公开 |
+| `POST /api/talks` | `talk:write` |
+| `PUT /api/talks` | `talk:write` |
+| `DELETE /api/talks` | `talk:delete` |
 
 ### 创建自定义权限Token
 
 ```bash
-curl -X POST http://localhost:8000/api/tokens/create \
+curl -X POST http://localhost:8000/api/system/tokens \
   -H "Authorization: Bearer <your_super_token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -175,7 +174,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 
 ## Token 管理接口
 
-### GET /api/tokens/list
+### GET /api/system/tokens
 获取所有 token 列表
 
 **请求头**:
@@ -206,7 +205,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 
 ---
 
-### POST /api/tokens/create
+### POST /api/system/tokens
 创建新 token
 
 **请求头**:
@@ -226,7 +225,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 **说明**:
 - `name` - 必填，Token名称（1-100字符）
 - `description` - 可选，Token描述（0-500字符）
-- `expiresIn` - 过期时间（毫秒），未传该项时使用默认值（默认3天），最小值为 1 毫秒
+- `expiresIn` - 过期时间（毫秒），未传该项时使用默认值（默认24小时），最小值为 1 毫秒
 - `permissions` - 权限数组，可选值：`article:write`、`article:delete`、`talk:write`、`talk:delete`。未传该项时默认为全部权限（`["article:write", "article:delete", "talk:write", "talk:delete"]`）
 - 不支持永不过期 token（但可以设置超长过期时间，如：9999年）
 
@@ -254,7 +253,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 
 ---
 
-### DELETE /api/tokens/delete
+### DELETE /api/system/tokens
 删除 token
 
 **说明**: 从 Redis 中删除 token
@@ -286,7 +285,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 
 ## 配置接口
 
-### POST /api/config/set
+### POST /api/system/config
 设置或修改配置
 
 **说明**:
@@ -332,7 +331,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 
 ---
 
-### GET /api/config/get
+### GET /api/system/config
 获取配置
 
 **查询参数**:
@@ -343,7 +342,7 @@ curl -X POST http://localhost:8000/api/tokens/create \
 
 **示例请求**:
 ```
-GET /api/config/get?key=site_name
+GET /api/system/config?key=site_name
 ```
 
 **响应示例**:
@@ -368,7 +367,7 @@ GET /api/config/get?key=site_name
 
 ## 文章接口
 
-### GET /api/article/list
+### GET /api/articles
 获取文章列表
 
 **查询参数**:
@@ -389,9 +388,9 @@ GET /api/config/get?key=site_name
 
 **示例请求**:
 ```
-GET /api/article/list?posts=all&fields=slug,title,date
-GET /api/article/list?page=1&pageSize=10
-GET /api/article/list?sort=asc
+GET /api/articles?posts=all&fields=slug,title,date
+GET /api/articles?page=1&pageSize=10
+GET /api/articles?sort=asc
 ```
 
 **响应示例**:
@@ -414,16 +413,18 @@ GET /api/article/list?sort=asc
 
 ---
 
-### GET /api/article/get
+### GET /api/articles/:slug
 获取单篇文章内容
 
-**查询参数**:
+**路径参数**:
 - `slug` - 必填，文章标识符
+
+**查询参数**:
 - `type` - 可选，`markdown` 或 `html`，默认 `markdown`
 
 **示例请求**:
 ```
-GET /api/article/get?slug=my-first-post&type=html
+GET /api/articles/my-first-post?type=html
 ```
 
 **响应示例**:
@@ -445,58 +446,7 @@ GET /api/article/get?slug=my-first-post&type=html
 
 ---
 
-### GET /api/article/all
-获取所有文章（包含内容，可用于备份）
-
-**查询参数**:
-- `page` - 可选，页码（需与 pageSize 同时使用）
-- `pageSize` - 可选，每页数量（需与 page 同时使用）
-- `sort` - 可选，排序方式，`asc` 或 `desc`，默认 `desc`
-
-**说明**:
-- 当不传 `page` 和 `pageSize` 时，返回所有文章（不分页）
-- 当传入 `page` 和 `pageSize` 时，返回分页数据
-
-**错误响应**:
-- `400` - 排序参数无效（只能为 asc 或 desc）
-- `400` - 分页参数不完整
-
-**请求头**:
-- `Authorization: Bearer <token>`
-
-**示例请求**:
-```
-GET /api/article/all?page=1&pageSize=10
-GET /api/article/all?sort=asc
-```
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "message": "获取成功",
-  "data": [
-    {
-      "slug": "my-first-post",
-      "title": "我的第一篇文章",
-      "description": "这是文章摘要",
-      "tags": ["技术", "Vue"],
-      "content": "# 文章内容\n...",
-      "published": true,
-      "date": "2024-01-01"
-    }
-  ],
-  "allTags": ["技术", "Vue", "生活"],
-  "page": 1,
-  "pageSize": 10,
-  "total": 50,
-  "totalPages": 5
-}
-```
-
----
-
-### POST /api/article/add
+### POST /api/articles
 添加文章
 
 **请求头**:
@@ -544,7 +494,7 @@ GET /api/article/all?sort=asc
 
 ---
 
-### PUT /api/article/edit
+### PUT /api/articles
 更新文章
 
 **请求头**:
@@ -587,7 +537,7 @@ GET /api/article/all?sort=asc
 
 ---
 
-### PUT /api/article/edit-slug
+### PATCH /api/articles
 修改文章 slug
 
 **请求头**:
@@ -624,7 +574,7 @@ GET /api/article/all?sort=asc
 
 ---
 
-### DELETE /api/article/delete
+### DELETE /api/articles
 删除文章
 
 **请求头**:
@@ -656,7 +606,7 @@ GET /api/article/all?sort=asc
 
 ## 说说接口
 
-### GET /api/talks/get
+### GET /api/talks
 获取说说列表
 
 **查询参数**:
@@ -674,8 +624,8 @@ GET /api/article/all?sort=asc
 
 **示例请求**:
 ```
-GET /api/talks/get?page=1&pageSize=20&tag=技术&sort=desc
-GET /api/talks/get?sort=asc
+GET /api/talks?page=1&pageSize=20&tag=技术&sort=desc
+GET /api/talks?sort=asc
 ```
 
 **响应示例**:
@@ -709,7 +659,7 @@ GET /api/talks/get?sort=asc
 
 ---
 
-### POST /api/talks/add
+### POST /api/talks
 添加说说
 
 **请求头**:
@@ -753,7 +703,7 @@ GET /api/talks/get?sort=asc
 
 ---
 
-### PUT /api/talks/edit
+### PUT /api/talks
 更新说说
 
 **请求头**:
@@ -793,7 +743,7 @@ GET /api/talks/get?sort=asc
 
 ---
 
-### DELETE /api/talks/delete
+### DELETE /api/talks
 删除说说
 
 **请求头**:
