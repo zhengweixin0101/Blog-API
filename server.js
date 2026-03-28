@@ -29,7 +29,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { requirePermission, requireValidToken } = require('./middleware/permission');
 
 // 路由
-const articleRoute = require('./api/article');
+const articleRoute = require('./api/articles');
 const talksRoute = require('./api/talks');
 const loginRoute = require('./api/system/login');
 const updateAccountRoute = require('./api/system/updateAccount');
