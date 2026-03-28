@@ -15,6 +15,7 @@ const FIELD_MAP = {
     title: 'title',
     description: 'description',
     tags: 'tags',
+    content: 'content',
     published: 'published',
     date: "TO_CHAR(date, 'YYYY-MM-DD') AS date",
 };
@@ -125,11 +126,21 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const allowedFields = Object.keys(FIELD_MAP);
 
+    // 默认不包含 content，只有显式指定 fields 时才返回
+    const defaultColumns = Object.entries(FIELD_MAP)
+        .filter(([key]) => key !== 'content')
+        .map(([, value]) => value);
+
     const columns = fields
         ? fields
-            .filter(f => allowedFields.includes(f))
-            .map(f => FIELD_MAP[f])
-        : Object.values(FIELD_MAP);
+            .filter(f => {
+                return allowedFields.includes(f) || f === 'content';
+            })
+            .map(f => {
+                if (f === 'content') return 'content';
+                return FIELD_MAP[f];
+            })
+        : defaultColumns;
 
     let query = `SELECT ${columns.join(', ')} FROM articles`;
     const params = [];
