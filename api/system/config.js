@@ -25,9 +25,9 @@ router.get('/', asyncHandler(async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-        return res.status(404).json({
-            success: false,
-            error: '配置不存在'
+        return res.json({
+            success: true,
+            data: {}
         });
     }
 
