@@ -371,7 +371,7 @@ GET /api/system/config?key=site_name
 获取文章列表
 
 **查询参数**:
-- `posts` - 可选，`all` 表示返回所有文章（包括未发布），默认只返回已发布
+- `posts` - 可选，`all` 表示返回所有文章（包括未发布，不包含正文），默认只返回已发布
 - `fields` - 可选，指定返回字段，如 `slug,title,date`
 - `page` - 可选，页码（需与 pageSize 同时使用）
 - `pageSize` - 可选，每页数量（需与 page 同时使用）
