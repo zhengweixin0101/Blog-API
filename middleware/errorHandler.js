@@ -2,9 +2,15 @@
  * 统一错误处理中间件
  * 捕获所有路由中抛出的错误并返回标准化响应
  */
+const logger = require('../logger');
 
 function errorHandler(err, req, res, next) {
-    // 记录错误日志
+    // 记录错误日志（避免重复记录）
+    if (!req._logged) {
+        logger.logFromRequest(req, `错误: ${err.message}`, err.status || 500);
+    }
+
+    // 记录错误详细信息到控制台用于调试
     console.error('❌ [Error]', {
         message: err.message,
         stack: err.stack,

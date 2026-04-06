@@ -6,6 +6,7 @@ const turnstile = require('../../middleware/turnstile');
 const { asyncHandler } = require('../../middleware/errorHandler');
 const { Auth } = require('../../utils/config');
 const { CacheKeys } = require('../../utils/constants');
+const logger = require('../../logger');
 const redis = db.redis;
 
 const router = express.Router();
@@ -71,6 +72,10 @@ router.post('/', asyncHandler(async (req, res) => {
 
         // 创建账号成功，清除人机验证标记
         turnstile.clearVerification();
+
+        // 记录登录日志
+        await logger.logFromRequest(req, '注册管理员', 200);
+
         return res.json({
             success: true,
             message: '账号创建成功',
@@ -85,6 +90,10 @@ router.post('/', asyncHandler(async (req, res) => {
     if (!isValid) {
         // 密码错误，要求后续请求进行人机验证
         turnstile.setNeedVerification(true);
+
+        // 记录登录失败日志
+        await logger.logFromRequest(req, '登录失败-密码错误', 401);
+
         const err = new Error('用户名或密码错误');
         err.status = 401;
         throw err;
@@ -93,6 +102,10 @@ router.post('/', asyncHandler(async (req, res) => {
     // 验证用户名
     if (adminConfig.username !== username) {
         turnstile.setNeedVerification(true);
+
+        // 记录登录失败日志
+        await logger.logFromRequest(req, '登录失败-用户名错误', 401);
+
         const err = new Error('用户名或密码错误');
         err.status = 401;
         throw err;
@@ -119,6 +132,10 @@ router.post('/', asyncHandler(async (req, res) => {
 
     // 登录成功，清除人机验证标记
     turnstile.clearVerification();
+
+    // 记录登录成功日志
+    await logger.logFromRequest(req, '登录成功', 200);
+
     res.json({
         success: true,
         message: '登录成功',

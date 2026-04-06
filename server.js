@@ -24,9 +24,9 @@ const PORT = process.env.PORT || App.PORT;
 // 中间件
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
-const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema, deleteTokenSchema, createTokenSchema, setConfigSchema, getConfigSchema } = require('./middleware/validate');
+const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema, deleteTokenSchema, createTokenSchema, setConfigSchema, getConfigSchema, logsQuerySchema } = require('./middleware/validate');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
-const { requirePermission, requireValidToken } = require('./middleware/permission');
+const { requirePermission } = require('./middleware/permission');
 
 // 路由
 const articleRoute = require('./api/articles');
@@ -35,6 +35,7 @@ const loginRoute = require('./api/system/login');
 const updateAccountRoute = require('./api/system/updateAccount');
 const tokensRoute = require('./api/system/tokens');
 const configRoute = require('./api/system/config');
+const logsRoute = require('./api/logs');
   
 app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
 app.use('/api/system/updateAccount', verifyAuth, requirePermission('super'), validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
@@ -118,6 +119,19 @@ app.use('/api/talks', (req, res, next) => {
         });
     });
 }, verifyTurnstile, talksRoute);
+
+// 日志相关路由
+app.use('/api/logs', verifyAuth, requirePermission('super'), (req, res, next) => {
+    if (req.method === 'GET') {
+        return validate(logsQuerySchema)(req, res, next);
+    }
+
+    if (req.method === 'DELETE') {
+        return next();
+    }
+
+    next();
+}, logsRoute);
 
 // 404 处理
 app.use(notFoundHandler);

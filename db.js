@@ -67,6 +67,7 @@ async function init() {
             await redis.del(keys);
         }
     } while (cursor !== '0');
+    
     console.log('🧹 缓存已清除');
 
     const checkTablesQuery = `

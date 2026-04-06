@@ -4,6 +4,7 @@ const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
 const { Auth } = require('../../utils/config');
 const { CacheKeys } = require('../../utils/constants');
+const logger = require('../../logger');
 
 const redis = db.redis;
 
@@ -96,6 +97,8 @@ router.post('/', asyncHandler(async (req, res) => {
     const tokenKey = `token:${tokenData.id}`;
     await redis.set(tokenKey, JSON.stringify(tokenData), 'EX', ttlSeconds);
 
+    await logger.logFromRequest(req, `创建Token "${name}"`, 201);
+
     res.json({
         success: true,
         message: 'Token 创建成功',
@@ -136,6 +139,8 @@ router.delete('/', asyncHandler(async (req, res) => {
 
     const parsedToken = JSON.parse(tokenData);
     await redis.del(tokenKey);
+
+    await logger.logFromRequest(req, `删除Token "${parsedToken.name}"`, 200);
 
     res.json({
         success: true,

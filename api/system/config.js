@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const logger = require('../../logger');
 
 const router = express.Router();
 
@@ -80,6 +81,11 @@ router.post('/', asyncHandler(async (req, res) => {
             [key, JSON.stringify(value), description || null]
         );
     }
+
+    const action = existingConfig.rows.length > 0
+        ? `更新配置 "${key}"`
+        : `创建配置 "${key}"`;
+    await logger.logFromRequest(req, action, 200);
 
     res.json({
         success: true,

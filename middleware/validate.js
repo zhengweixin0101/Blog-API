@@ -115,6 +115,18 @@ const getConfigSchema = Joi.object({
     key: Joi.string().min(1).max(200).required()
 });
 
+// 日志查询验证
+const logsQuerySchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+    userId: Joi.number().integer().optional(),
+    action: Joi.string().optional(),
+    method: Joi.string().valid('GET', 'POST', 'PUT', 'PATCH', 'DELETE').optional(),
+    status: Joi.number().integer().optional(),
+    startDate: Joi.date().iso().optional(),
+    endDate: Joi.date().iso().optional()
+});
+
 /**
  * 验证中间件
  * @param {Joi.Schema} schema - Joi 验证模式
@@ -157,5 +169,6 @@ module.exports = {
     deleteTokenSchema,
     createTokenSchema,
     setConfigSchema,
-    getConfigSchema
+    getConfigSchema,
+    logsQuerySchema
 };

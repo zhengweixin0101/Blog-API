@@ -21,10 +21,17 @@ const CacheKeys = {
     // 配置相关缓存键
     CONFIG_PREFIX: 'config:',
 
+    // 日志相关缓存键
+    LOGS_PREFIX: 'logs:',
+    LOGS_PATTERN: 'logs:*',
+    LOCATIONS_KEY: 'logs:locations',
+    LOGS_LIST_KEY: 'logs:list',
+
     // 缓存匹配模式（用于 SCAN 命令）
     POSTS_PATTERN: 'posts:*',
     TALKS_PATTERN: 'talks:*',
     TOKENS_PATTERN: 'tokens:*',
+    LOGS_PATTERN: 'logs:*',
 
     /**
      * 生成文章列表缓存键
@@ -108,6 +115,15 @@ const CacheKeys = {
      */
     configKey: (key) => {
         return `config:${key}`;
+    },
+
+    /**
+     * 生成日志缓存键
+     * @param {number} id - 日志ID
+     * @returns {string} 缓存键
+     */
+    logKey: (id) => {
+        return `logs:${id}`;
     }
 };
 

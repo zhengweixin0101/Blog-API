@@ -31,6 +31,8 @@
 | `DELETE /api/system/tokens` | `super` |
 | `GET /api/system/config` | `super` |
 | `POST /api/system/config` | `super` |
+| `GET /api/logs` | `super` |
+| `DELETE /api/logs` | `super` |
 | `GET /api/articles/:slug` | 公开 |
 | `GET /api/articles` | 公开 |
 | `POST /api/articles` | `article:write` |
@@ -770,6 +772,79 @@ GET /api/talks?sort=asc
 - `401` - 未认证或 token 过期
 - `403` - 权限不足
 - `404` - 说说不存在
+
+---
+
+## 日志接口
+
+### GET /api/logs
+获取日志列表
+
+**权限要求**: `super`
+
+**查询参数**:
+- `page` - 可选，页码（默认 1）
+- `pageSize` - 可选，每页数量（默认 20）
+- `action` - 可选，操作名称筛选（模糊匹配）
+- `method` - 可选，请求方法筛选
+- `status` - 可选，状态码筛选
+- `startDate` - 可选，开始日期（YYYY-MM-DD）
+- `endDate` - 可选，结束日期（YYYY-MM-DD）
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": "a3b5c7d9e2f4g",
+      "action": "删除文章",
+      "ip": "1.2.3.4",
+      "location": "浙江杭州 中国移动",
+      "user_agent": "Mozilla/5.0 ...",
+      "method": "DELETE",
+      "path": "/api/articles?slug=test",
+      "status": 200,
+      "token_name": "Login",
+      "browser": "Chrome 120.0",
+      "created_at": "2025/04/05 12:00:00"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 100,
+    "totalPages": 5
+  }
+}
+```
+
+---
+
+### DELETE /api/logs
+清空日志
+
+**权限要求**: `super`
+
+**查询参数**:
+- `days` - 可选，保留最近多少天的日志（默认 0 表示清空所有）
+
+**示例请求**:
+```
+DELETE /api/logs?days=7
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "清理成功",
+  "data": {
+    "deletedCount": 50
+  }
+}
+```
 
 ---
 

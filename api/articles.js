@@ -6,6 +6,7 @@ const { clearPostListCache, clearPostCache } = require('../utils/cache');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { CacheKeys } = require('../utils/constants');
 const { Cache } = require('../utils/config');
+const logger = require('../logger');
 
 const redis = db.redis;
 
@@ -202,6 +203,8 @@ router.post('/', asyncHandler(async (req, res) => {
     const newArticle = result.rows[0];
     await clearPostListCache();
 
+    await logger.logFromRequest(req, `添加文章 "${slug}"`, 201);
+
     res.json({
         success: true,
         message: '文章添加成功',
@@ -255,6 +258,8 @@ router.put('/', asyncHandler(async (req, res) => {
 
     await clearPostListCache();
     await clearPostCache(slug);
+
+    await logger.logFromRequest(req, `编辑文章 "${slug}"`, 200);
 
     res.json({
         success: true,
@@ -310,6 +315,8 @@ router.patch('/', asyncHandler(async (req, res) => {
     await clearPostCache(oldSlug);
     await clearPostCache(newSlug);
 
+    await logger.logFromRequest(req, `修改文章slug "${oldSlug}" → "${newSlug}"`, 200);
+
     res.json({
         success: true,
         message: 'slug 更新成功',
@@ -343,6 +350,8 @@ router.delete('/', asyncHandler(async (req, res) => {
 
     await clearPostListCache();
     await clearPostCache(slug);
+
+    await logger.logFromRequest(req, `删除文章 "${slug}"`, 200);
 
     res.json({
         success: true,

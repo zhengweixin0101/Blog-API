@@ -5,6 +5,7 @@ const { clearTalksCache } = require('../utils/cache');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { CacheKeys } = require('../utils/constants');
 const { Cache } = require('../utils/config');
+const logger = require('../logger');
 
 const redis = db.redis;
 
@@ -143,6 +144,8 @@ router.post('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
+    await logger.logFromRequest(req, `添加说说 #${result.rows[0].id}`, 201);
+
     res.json({
         success: true,
         message: '说说添加成功',
@@ -213,6 +216,8 @@ router.put('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
+    await logger.logFromRequest(req, `编辑说说 #${id}`, 200);
+
     res.json({
         success: true,
         message: '说说编辑成功',
@@ -244,6 +249,8 @@ router.delete('/', asyncHandler(async (req, res) => {
     }
 
     await clearTalksCache();
+
+    await logger.logFromRequest(req, `删除说说 #${id}`, 200);
 
     res.json({
         success: true,

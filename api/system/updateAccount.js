@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
 const { CacheKeys } = require('../../utils/constants');
+const logger = require('../../logger');
 const redis = db.redis;
 
 const router = express.Router();
@@ -71,6 +72,8 @@ router.post('/', asyncHandler(async (req, res) => {
             }
         } while (cursor !== '0');
     }
+
+    await logger.logFromRequest(req, '更新账户信息', 200);
 
     res.json({
         success: true,
