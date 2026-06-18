@@ -3,8 +3,26 @@
 ## 基础信息
 
 - **Base URL**: `http://localhost:8000`
-- **数据格式**:
+- **数据格式**: `application/json`
 - **认证方式**: Bearer Token
+
+## 环境变量
+
+| 变量名 | 必填 | 说明 |
+|--------|------|------|
+| `DATABASE_URL` | 是 | PostgreSQL 连接字符串 |
+| `REDIS_URL` | 是 | Redis 连接字符串 |
+| `CORS_ORIGINS` | 否 | CORS 允许的来源域名，多个用逗号分隔。未设置时允许所有来源。示例：`https://example.com,https://www.example.com` |
+| `TURNSTILE_SECRET_KEY` | 否 | Cloudflare Turnstile 密钥，未设置时禁用人机验证 |
+
+## 常量配置
+
+项目中的可配置常量统一管理在以下文件中：
+
+| 文件 | 说明 |
+|------|------|
+| `utils/config.js` | 应用配置：Token 有效期、速率限制、日志过期时间、数据库连接池、Turnstile 等 |
+| `utils/constants.js` | Redis 缓存键前缀和数据库索引名称 |
 
 ## 权限说明
 
@@ -108,6 +126,7 @@ curl -X POST http://localhost:8000/api/system/tokens \
 - 只存在一个登录 Token，重新登录会覆盖原 Token
 - 可手动创建 Token，用于其他应用访问
 - Token 信息仅存储在 Redis 中
+- **速率限制**: 默认每个 IP 每分钟最多 3 次请求，超出返回 429
 
 **请求头**:
 - `Content-Type: application/json`
@@ -134,6 +153,7 @@ curl -X POST http://localhost:8000/api/system/tokens \
 **错误响应**:
 - `401` - 用户名或密码错误
 - `400` - 需要人机验证
+- `429` - 请求过于频繁
 
 ---
 
@@ -646,7 +666,12 @@ GET /api/talks?sort=asc
           "url": "https://google.com"
         }
       ],
-      "imgs": ["https://example.com/img.jpg"],
+      "imgs": [
+        {
+          "alt": "照片",
+          "url": "https://example.com/img.jpg"
+        }
+      ],
       "tags": ["生活"],
       "created_at": "2024-01-01T00:00:00.000Z"
     }
@@ -679,7 +704,12 @@ GET /api/talks?sort=asc
       "url": "https://google.com"
     }
   ],
-  "imgs": ["https://example.com/img.jpg"],
+  "imgs": [
+    {
+      "alt": "照片",
+      "url": "https://example.com/img.jpg"
+    }
+  ],
   "tags": ["生活"],
   "turnstileToken": "..."
 }
@@ -858,7 +888,7 @@ DELETE /api/logs?days=7
    - 请求体中的 `turnstileToken` 字段
    - 请求头中的 `x-turnstile-token` 字段
 
-**触发验证的场景**: Token 验证失败后
+**触发验证的场景**: 同一 IP 登录失败后，该 IP 的后续请求需通过人机验证（默认 10 分钟后自动过期）
 
 ---
 
@@ -872,6 +902,7 @@ DELETE /api/logs?days=7
 | 403 | 禁止访问 |
 | 404 | 资源不存在 |
 | 409 | 数据冲突（如重复的 slug） |
+| 429 | 请求过于频繁（速率限制） |
 | 500 | 服务器内部错误 |
 | 503 | 服务不可用 |
 
@@ -899,8 +930,8 @@ DELETE /api/logs?days=7
 | id | number | 说说 ID |
 | content | string | 说说内容 |
 | location | string \| null | 地点 |
-| links | object[] | 链接数组 |
-| imgs | string[] | 图片 URL 数组 |
+| links | object[] | 链接数组，每项包含 `{text, url}` |
+| imgs | object[] | 图片数组，每项包含 `{alt, url}` |
 | tags | string[] | 标签数组 |
 | created_at | string | 创建时间 |
 
