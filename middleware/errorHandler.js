@@ -28,8 +28,7 @@ function errorHandler(err, req, res, next) {
             // 唯一约束违反
             return res.status(409).json({
                 success: false,
-                error: '数据冲突，记录已存在',
-                detail: err.constraint
+                error: '数据冲突，记录已存在'
             });
         }
         if (err.code === '23503') {

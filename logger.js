@@ -1,6 +1,7 @@
 const axios = require('axios');
 const db = require('./db');
 const { CacheKeys } = require('./utils/constants');
+const { Log } = require('./utils/config');
 
 /**
  * 获取客户端IP地址
@@ -101,7 +102,7 @@ async function getLocation(ip) {
                 // 更新 Redis 缓存（使用 Hash，整个列表缓存30天）
                 try {
                     await db.redis.hset(CacheKeys.LOCATIONS_KEY, ip, location);
-                    await db.redis.expire(CacheKeys.LOCATIONS_KEY, 30 * 24 * 60 * 60);
+                    await db.redis.expire(CacheKeys.LOCATIONS_KEY, Log.LOCATION_EXPIRY);
                 } catch (error) {
                     console.warn('Redis 缓存写入失败:', error.message);
                 }
@@ -162,10 +163,10 @@ function isPublicGetOperation(method, path) {
 function getLogExpiry(method, path) {
     // 公开的GET操作：7天
     if (isPublicGetOperation(method, path)) {
-        return 7 * 24 * 60 * 60; // 7天
+        return Log.PUBLIC_GET_EXPIRY;
     }
     // 其他系统操作：30天
-    return 30 * 24 * 60 * 60; // 30天
+    return Log.SYSTEM_EXPIRY;
 }
 
 /**
@@ -217,8 +218,8 @@ log: async (action, ip, location, userAgent, method, path, status, tokenInfo = n
         // 存储到 Sorted Set
         await db.redis.zadd(CacheKeys.LOGS_LIST_KEY, score, JSON.stringify(logData));
 
-        // 设置 Sorted Set 过期时间（30天）
-        await db.redis.expire(CacheKeys.LOGS_LIST_KEY, 30 * 24 * 60 * 60);
+        // 设置 Sorted Set 过期时间
+        await db.redis.expire(CacheKeys.LOGS_LIST_KEY, Log.SYSTEM_EXPIRY);
 
         return logId;
     } catch (error) {

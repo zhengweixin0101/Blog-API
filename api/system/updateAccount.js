@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const db = require('../../db.js');
 const { asyncHandler } = require('../../middleware/errorHandler');
 const { CacheKeys } = require('../../utils/constants');
+const { Auth } = require('../../utils/config');
 const logger = require('../../logger');
 const redis = db.redis;
 
@@ -46,7 +47,7 @@ router.post('/', asyncHandler(async (req, res) => {
     }
 
     if (password) {
-        updatedConfig.password = await bcrypt.hash(password, 10);
+        updatedConfig.password = await bcrypt.hash(password, Auth.BCRYPT_SALT_ROUNDS);
     }
 
     // 更新 configs 表

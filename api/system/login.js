@@ -20,17 +20,8 @@ function generateToken() {
  * Body: { username, password, turnstileToken? }
  */
 router.post('/', asyncHandler(async (req, res) => {
-    const { username, password, turnstileToken } = req.body;
-    const providedToken = turnstileToken || req.headers['x-turnstile-token'];
-
-    // 若服务端已标记需要人机验证，且本次请求未提供 turnstile token，则直接返回提示
-    if (turnstile.shouldRequireVerification(providedToken)) {
-        return res.status(400).json({
-            success: false,
-            error: '请先进行人机验证',
-            needTurnstile: true
-        });
-    }
+    const { username, password } = req.body;
+    const ip = turnstile.getClientIp(req);
 
     // 从 configs 表获取管理员信息
     const result = await db.query(
@@ -40,7 +31,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
     if (result.rows.length === 0) {
         // 首次使用，创建管理员配置
-        const hash = await bcrypt.hash(password, 10);
+        const hash = await bcrypt.hash(password, Auth.BCRYPT_SALT_ROUNDS);
         const token = generateToken();
         const tokenExpiresAt = new Date(Date.now() + Auth.TOKEN_EXPIRY);
 
@@ -70,8 +61,8 @@ router.post('/', asyncHandler(async (req, res) => {
         };
         await redis.set(CacheKeys.LOGIN_TOKEN, JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
 
-        // 创建账号成功，清除人机验证标记
-        turnstile.clearVerification();
+        // 创建账号成功，清除该 IP 的人机验证标记
+        await turnstile.clearVerification(ip);
 
         // 记录登录日志
         await logger.logFromRequest(req, '注册管理员', 200);
@@ -85,26 +76,21 @@ router.post('/', asyncHandler(async (req, res) => {
     }
 
     const adminConfig = result.rows[0].value;
-    const isValid = await bcrypt.compare(password, adminConfig.password);
 
-    if (!isValid) {
-        // 密码错误，要求后续请求进行人机验证
-        turnstile.setNeedVerification(true);
-
-        // 记录登录失败日志
-        await logger.logFromRequest(req, '登录失败-密码错误', 401);
+    // 先验证用户名，再验证密码
+    if (adminConfig.username !== username) {
+        await turnstile.setNeedVerification(ip);
+        await logger.logFromRequest(req, '登录失败-用户名错误', 401);
 
         const err = new Error('用户名或密码错误');
         err.status = 401;
         throw err;
     }
 
-    // 验证用户名
-    if (adminConfig.username !== username) {
-        turnstile.setNeedVerification(true);
-
-        // 记录登录失败日志
-        await logger.logFromRequest(req, '登录失败-用户名错误', 401);
+    const isValid = await bcrypt.compare(password, adminConfig.password);
+    if (!isValid) {
+        await turnstile.setNeedVerification(ip);
+        await logger.logFromRequest(req, '登录失败-密码错误', 401);
 
         const err = new Error('用户名或密码错误');
         err.status = 401;
@@ -130,8 +116,8 @@ router.post('/', asyncHandler(async (req, res) => {
     };
     await redis.set(CacheKeys.LOGIN_TOKEN, JSON.stringify(tokenData), 'EX', Auth.TOKEN_EXPIRY / 1000);
 
-    // 登录成功，清除人机验证标记
-    turnstile.clearVerification();
+    // 登录成功，清除该 IP 的人机验证标记
+    await turnstile.clearVerification(ip);
 
     // 记录登录成功日志
     await logger.logFromRequest(req, '登录成功', 200);

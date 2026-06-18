@@ -27,6 +27,11 @@ const CacheKeys = {
     LOCATIONS_KEY: 'logs:locations',
     LOGS_LIST_KEY: 'logs:list',
 
+    // System 相关缓存键
+    SYSTEM_RATE_LIMIT_PREFIX: 'system:ratelimit:',
+    SYSTEM_RATE_LIMIT_PATTERN: 'system:ratelimit:*',
+    SYSTEM_TURNSTILE_PREFIX: 'system:turnstile:',
+
     // 缓存匹配模式（用于 SCAN 命令）
     POSTS_PATTERN: 'posts:*',
     TALKS_PATTERN: 'talks:*',

@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 const Redis = require('ioredis');
 require('dotenv').config();
-const { DBIndexes } = require('./utils/constants');
+const { DBIndexes, CacheKeys } = require('./utils/constants');
 const { Database, Cache } = require('./utils/config');
 
 const pool = new Pool({
@@ -11,9 +11,8 @@ const pool = new Pool({
     min: Database.POOL.MIN,
     idleTimeoutMillis: Database.POOL.IDLE_TIMEOUT_MS,
     connectionTimeoutMillis: Database.POOL.CONNECTION_TIMEOUT_MS,
-    // 保持连接活跃
     keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
+    keepAliveInitialDelayMillis: Database.POOL.KEEPALIVE_INITIAL_DELAY_MS,
 });
 
 pool.on('error', (err) => {
@@ -42,8 +41,6 @@ async function close() {
         throw err;
     }
 }
-
-const { CacheKeys } = require('./utils/constants');
 
 async function init() {
     console.log('✅ PostgreSQL 连接成功');

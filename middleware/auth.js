@@ -65,7 +65,8 @@ async function verifyAuth(req, res, next) {
 
     // 更新最后使用时间
     parsedTokenData.last_used_at = new Date().toISOString();
-    await redis.set(tokenCacheKey, JSON.stringify(parsedTokenData));
+    const remainingTtl = Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+    await redis.set(tokenCacheKey, JSON.stringify(parsedTokenData), 'EX', remainingTtl);
 
     // 构建用户信息
     req.user = {

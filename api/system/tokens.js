@@ -73,7 +73,7 @@ router.post('/', asyncHandler(async (req, res) => {
     const { name, description, expiresIn, permissions } = req.body;
 
     const token = generateToken();
-    const tokenExpiresAt = new Date(Date.now() + (expiresIn || 86400 * 1000)); // 默认24小时
+    const tokenExpiresAt = new Date(Date.now() + (expiresIn || Auth.TOKEN_EXPIRY_CUSTOM));
 
     // 将 token 写入 Redis
     const now = new Date();
@@ -88,13 +88,13 @@ router.post('/', asyncHandler(async (req, res) => {
         permissions: permissions || []
     };
 
-    // 计算缓存 TTL（至少 60 秒）
+    // 计算缓存 TTL（至少 TOKEN_TTL_MIN 秒）
     const ttlSeconds = Math.max(
-        60,
+        Auth.TOKEN_TTL_MIN,
         Math.floor((tokenExpiresAt.getTime() - now.getTime()) / 1000)
     );
     
-    const tokenKey = `token:${tokenData.id}`;
+    const tokenKey = CacheKeys.tokenKey(token);
     await redis.set(tokenKey, JSON.stringify(tokenData), 'EX', ttlSeconds);
 
     await logger.logFromRequest(req, `创建Token "${name}"`, 201);
@@ -128,24 +128,44 @@ router.delete('/', asyncHandler(async (req, res) => {
         throw err;
     }
 
-    const tokenKey = `token:${id}`;
-    const tokenData = await redis.get(tokenKey);
+    // 扫描所有 tokens 查找匹配 ID 的 token
+    let cursor = '0';
+    let found = false;
 
-    if (!tokenData) {
+    do {
+        const result = await redis.scan(cursor, 'MATCH', CacheKeys.TOKENS_PATTERN, 'COUNT', 100);
+        cursor = result[0];
+        const keys = result[1];
+
+        for (const key of keys) {
+            // 跳过登录 token
+            if (key === CacheKeys.LOGIN_TOKEN) continue;
+
+            const value = await redis.get(key);
+            if (!value) continue;
+
+            try {
+                const parsedToken = JSON.parse(value);
+                if (parsedToken.id === id) {
+                    await redis.del(key);
+                    found = true;
+                    await logger.logFromRequest(req, `删除Token "${parsedToken.name}"`, 200);
+                    return res.json({
+                        success: true,
+                        message: `Token '${parsedToken.name}' 已删除`
+                    });
+                }
+            } catch (err) {
+                // 忽略解析错误
+            }
+        }
+    } while (cursor !== '0');
+
+    if (!found) {
         const err = new Error('Token 不存在');
         err.status = 404;
         throw err;
     }
-
-    const parsedToken = JSON.parse(tokenData);
-    await redis.del(tokenKey);
-
-    await logger.logFromRequest(req, `删除Token "${parsedToken.name}"`, 200);
-
-    res.json({
-        success: true,
-        message: `Token '${parsedToken.name}' 已删除`
-    });
 }));
 
 module.exports = router;

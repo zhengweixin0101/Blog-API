@@ -44,12 +44,15 @@ const deleteArticleSchema = Joi.object({
 const talkSchema = Joi.object({
     content: Joi.string().min(1).required(),
     location: Joi.string().allow(null, '').max(200).optional(),
-    links: Joi.array().items(Joi.object()).optional(),
+    links: Joi.array().items(Joi.object({
+        text: Joi.string().max(200).required(),
+        url: Joi.string().uri().required()
+    })).max(10).optional(),
     imgs: Joi.array().items(Joi.object({
         alt: Joi.string().required(),
         url: Joi.string().uri().required()
-    })).optional(),
-    tags: Joi.array().items(Joi.string()).optional()
+    })).max(10).optional(),
+    tags: Joi.array().items(Joi.string().max(50)).max(10).optional()
 });
 
 // 编辑说说验证
@@ -57,12 +60,15 @@ const editTalkSchema = Joi.object({
     id: Joi.number().integer().positive().required(),
     content: Joi.string().min(1).optional(),
     location: Joi.string().allow(null, '').max(200).optional(),
-    links: Joi.array().items(Joi.object()).optional(),
+    links: Joi.array().items(Joi.object({
+        text: Joi.string().max(200).required(),
+        url: Joi.string().uri().required()
+    })).max(10).optional(),
     imgs: Joi.array().items(Joi.object({
         alt: Joi.string().required(),
         url: Joi.string().uri().required()
-    })).optional(),
-    tags: Joi.array().items(Joi.string()).optional()
+    })).max(10).optional(),
+    tags: Joi.array().items(Joi.string().max(50)).max(10).optional()
 });
 
 // 删除说说验证

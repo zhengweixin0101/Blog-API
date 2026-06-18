@@ -1,42 +1,49 @@
 const axios = require('axios');
 const { asyncHandler } = require('./errorHandler');
+const db = require('../db');
+const { CacheKeys } = require('../utils/constants');
+const { Turnstile } = require('../utils/config');
 
 const secretKey = process.env.TURNSTILE_SECRET_KEY;
 const turnstileEnabled = !!secretKey;
-
-// 验证失败标记
-let needVerification = false;
+const redis = db.redis;
 
 /**
- * 检查是否需要人机验证
- * @returns {boolean}
+ * 检查指定 IP 是否需要人机验证
+ * @param {string} ip - 客户端 IP
+ * @returns {Promise<boolean>}
  */
-function isNeedVerification() {
-    return needVerification;
+async function isNeedVerification(ip) {
+    const val = await redis.get(`${CacheKeys.SYSTEM_TURNSTILE_PREFIX}${ip}`);
+    return val === '1';
 }
 
 /**
- * 设置人机验证标记
- * @param {boolean} value
+ * 标记指定 IP 需要人机验证
+ * @param {string} ip - 客户端 IP
  */
-function setNeedVerification(value) {
-    needVerification = value;
+async function setNeedVerification(ip) {
+    await redis.set(`${CacheKeys.SYSTEM_TURNSTILE_PREFIX}${ip}`, '1', 'EX', Turnstile.VERIFICATION_TTL);
 }
 
 /**
- * 清除人机验证标记
+ * 清除指定 IP 的人机验证标记
+ * @param {string} ip - 客户端 IP
  */
-function clearVerification() {
-    needVerification = false;
+async function clearVerification(ip) {
+    await redis.del(`${CacheKeys.SYSTEM_TURNSTILE_PREFIX}${ip}`);
 }
 
 /**
- * 检查是否需要提示用户进行验证（不直接返回响应）
- * @param {string} providedToken - 提供的验证令牌
- * @returns {boolean} 是否需要验证
+ * 获取客户端 IP
  */
-function shouldRequireVerification(providedToken) {
-    return needVerification && !providedToken;
+function getClientIp(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+           req.headers['x-real-ip'] ||
+           req.connection?.remoteAddress ||
+           req.socket?.remoteAddress ||
+           req.ip ||
+           'unknown';
 }
 
 /**
@@ -69,8 +76,6 @@ async function verifyTurnstileToken(token) {
         };
     }
 
-    // 验证成功，清除标记
-    clearVerification();
     return { success: true };
 }
 
@@ -80,17 +85,19 @@ async function verifyTurnstile(req, res, next) {
     }
 
     const token = (req.body && req.body.turnstileToken) || req.headers['x-turnstile-token'];
+    const ip = getClientIp(req);
 
-    // 如果标记需要验证，但没有提供 turnstileToken，要求验证
-    if (shouldRequireVerification(token)) {
+    // 检查该 IP 是否需要人机验证
+    const needVerification = await isNeedVerification(ip);
+    if (needVerification && !token) {
         return res.status(400).json({
             success: false,
-            error: '请完成人机验证',
+            error: '请先完成人机验证',
             needTurnstile: true
         });
     }
 
-    // 如果提供了 turnstileToken，先验证人机验证是否通过
+    // 如果提供了 turnstileToken，验证人机验证
     if (token) {
         const result = await verifyTurnstileToken(token);
 
@@ -102,15 +109,18 @@ async function verifyTurnstile(req, res, next) {
                 needTurnstile: true
             });
         }
+
+        // 验证成功，清除该 IP 的标记
+        await clearVerification(ip);
     }
 
-    // 首次访问或标记已清除，直接放行
     next();
 }
 
-module.exports = asyncHandler(verifyTurnstile);
-module.exports.isNeedVerification = isNeedVerification;
-module.exports.setNeedVerification = setNeedVerification;
-module.exports.clearVerification = clearVerification;
-module.exports.shouldRequireVerification = shouldRequireVerification;
-module.exports.verifyTurnstileToken = verifyTurnstileToken;
+module.exports = Object.assign(asyncHandler(verifyTurnstile), {
+    isNeedVerification,
+    setNeedVerification,
+    clearVerification,
+    verifyTurnstileToken,
+    getClientIp,
+});

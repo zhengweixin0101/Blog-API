@@ -7,7 +7,10 @@
  */
 const Auth = {
     TOKEN_EXPIRY: 3 * 24 * 60 * 60 * 1000, // Token 默认有效期（毫秒），登录和未传 expiresIn 时使用
+    TOKEN_EXPIRY_CUSTOM: 24 * 60 * 60 * 1000, // 自定义 Token 默认有效期（毫秒）
     TOKEN_LENGTH: 32,                     // Token 长度
+    TOKEN_TTL_MIN: 60,                    // Token Redis 最小 TTL（秒）
+    BCRYPT_SALT_ROUNDS: 10,              // bcrypt 盐轮数
 };
 
 /**
@@ -34,6 +37,7 @@ const Database = {
         MIN: 5,                          // 最小连接数
         IDLE_TIMEOUT_MS: 30000,         // 空闲连接超时（毫秒）
         CONNECTION_TIMEOUT_MS: 10000,  // 连接超时（毫秒）
+        KEEPALIVE_INITIAL_DELAY_MS: 10000, // keepAlive 初始延迟（毫秒）
     },
 };
 
@@ -54,10 +58,37 @@ const App = {
     SHUTDOWN_TIMEOUT: 10000, // 关闭超时（毫秒）
 };
 
+/**
+ * 速率限制配置
+ */
+const RateLimit = {
+    WINDOW_MS: 60 * 1000,  // 时间窗口（毫秒），默认 1 分钟
+    MAX: 3,                // 时间窗口内最大请求数
+};
+
+/**
+ * 日志配置
+ */
+const Log = {
+    PUBLIC_GET_EXPIRY: 7 * 24 * 60 * 60,    // 公开 GET 操作日志过期时间（秒），7 天
+    SYSTEM_EXPIRY: 30 * 24 * 60 * 60,       // 系统操作日志过期时间（秒），30 天
+    LOCATION_EXPIRY: 30 * 24 * 60 * 60,     // IP 定位缓存过期时间（秒），30 天
+};
+
+/**
+ * Turnstile 人机验证配置
+ */
+const Turnstile = {
+    VERIFICATION_TTL: 600, // 验证标记过期时间（秒），5 分钟
+};
+
 module.exports = {
     Auth,
     Cache,
     Database,
     Pagination,
     App,
+    RateLimit,
+    Log,
+    Turnstile,
 };

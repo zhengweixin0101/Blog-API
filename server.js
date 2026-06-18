@@ -4,9 +4,8 @@ const db = require('./db.js');
 const express = require('express');
 const cors = require('cors');
 const app = express();
-
 // 验证环境变量
-const requiredEnvVars = ['DATABASE_URL'];
+const requiredEnvVars = ['DATABASE_URL', 'REDIS_URL'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -14,12 +13,64 @@ if (missingEnvVars.length > 0) {
     process.exit(1);
 }
 
-app.use(cors());
+// CORS 白名单：支持多个来源，逗号分隔
+// 未设置 CORS_ORIGINS 时默认放行所有域名
+// 示例：CORS_ORIGINS=https://example.com,https://www.example.com,http://localhost:3000
+const corsWhitelist = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+    : null;
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // 允许无 origin 的请求（如 Postman、curl、服务端调用）
+        if (!origin) {
+            return callback(null, true);
+        }
+        // 未设置白名单 → 放行所有；已设置白名单 → 仅放行列表中的域名
+        if (corsWhitelist === null || corsWhitelist.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`⚠️  CORS 拦截：来源 ${origin} 不在白名单中`);
+            callback(new Error('不允许的跨域请求来源'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const { App } = require('./utils/config');
+const { App, RateLimit } = require('./utils/config');
+const { CacheKeys } = require('./utils/constants');
 const PORT = process.env.PORT || App.PORT;
+
+// Redis-based 速率限制：每个 IP 每分钟最多 N 次请求
+const redis = db.redis;
+async function rateLimitCheck(req) {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+               req.headers['x-real-ip'] ||
+               req.connection?.remoteAddress ||
+               req.socket?.remoteAddress ||
+               req.ip ||
+               'unknown';
+    const key = `${CacheKeys.SYSTEM_RATE_LIMIT_PREFIX}${ip}`;
+    const count = await redis.incr(key);
+    if (count === 1) {
+        await redis.expire(key, Math.ceil(RateLimit.WINDOW_MS / 1000));
+    }
+    return { ip, count };
+}
+
+function loginLimiter(req, res, next) {
+    rateLimitCheck(req).then(({ count }) => {
+        if (count > RateLimit.MAX) {
+            return res.status(429).json({
+                success: false,
+                error: '请求过于频繁，请稍后再试'
+            });
+        }
+        next();
+    }).catch(next);
+}
 
 // 中间件
 const verifyAuth = require('./middleware/auth');
@@ -37,7 +88,7 @@ const tokensRoute = require('./api/system/tokens');
 const configRoute = require('./api/system/config');
 const logsRoute = require('./api/logs');
   
-app.use('/api/system/login', validate(loginSchema), verifyTurnstile, loginRoute);
+app.use('/api/system/login', loginLimiter, validate(loginSchema), verifyTurnstile, loginRoute);
 app.use('/api/system/updateAccount', verifyAuth, requirePermission('super'), validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
 
 app.use('/api/system/tokens', verifyAuth, requirePermission('super'), (req, res, next) => {
