@@ -24,7 +24,7 @@ const CacheKeys = {
     // 日志相关缓存键
     LOGS_PREFIX: 'logs:',
     LOGS_PATTERN: 'logs:*',
-    LOCATIONS_KEY: 'logs:locations',
+    LOCATIONS_PREFIX: 'logs:location',
     LOGS_LIST_KEY: 'logs:list',
 
     // System 相关缓存键

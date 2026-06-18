@@ -45,9 +45,9 @@ async function getLocation(ip) {
 
     // 检查 Redis 缓存
     try {
-        const locations = await db.redis.hgetall(CacheKeys.LOCATIONS_KEY);
-        if (locations && locations[ip]) {
-            return locations[ip];
+        const cached = await db.redis.get(`${CacheKeys.LOCATIONS_PREFIX}:${ip}`);
+        if (cached) {
+            return cached;
         }
     } catch (error) {
         console.warn('Redis 缓存读取失败:', error.message);
@@ -99,10 +99,9 @@ async function getLocation(ip) {
             });
             const location = provider.parse(response.data);
             if (location) {
-                // 更新 Redis 缓存（使用 Hash，整个列表缓存30天）
+                // 更新 Redis 缓存
                 try {
-                    await db.redis.hset(CacheKeys.LOCATIONS_KEY, ip, location);
-                    await db.redis.expire(CacheKeys.LOCATIONS_KEY, Log.LOCATION_EXPIRY);
+                    await db.redis.set(`${CacheKeys.LOCATIONS_PREFIX}:${ip}`, location, 'EX', Log.LOCATION_EXPIRY);
                 } catch (error) {
                     console.warn('Redis 缓存写入失败:', error.message);
                 }
