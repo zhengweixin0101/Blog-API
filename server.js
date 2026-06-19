@@ -192,6 +192,12 @@ app.use(errorHandler);
 (async () => {
     try {
         await db.init(); // 初始化数据库
+
+        // 启动信息
+        const turnstileEnabled = !!process.env.TURNSTILE_SECRET_KEY;
+        console.log(`🔍 人机验证: ${turnstileEnabled ? '已启用' : '未启用'}`);
+        console.log(`🌐 CORS 来源: ${corsWhitelist ? corsWhitelist.join(', ') : '全部放行'}`);
+
         const server = app.listen(PORT, () => console.log(`🚀 服务运行在 http://localhost:${PORT}/`));
 
         // 优雅关闭处理
