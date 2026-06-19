@@ -70,7 +70,7 @@ const RateLimit = {
  * 日志配置
  */
 const Log = {
-    SYSTEM_EXPIRY: 30 * 24 * 60 * 60,       // 日志保留时间（秒），30 天
+    SYSTEM_EXPIRY: 90 * 24 * 60 * 60,       // 日志保留时间（秒），90 天
     LOCATION_EXPIRY: 30 * 24 * 60 * 60,     // IP 定位缓存过期时间（秒），30 天
 };
 
@@ -78,7 +78,7 @@ const Log = {
  * Turnstile 人机验证配置
  */
 const Turnstile = {
-    VERIFICATION_TTL: 600, // 验证标记过期时间（秒），5 分钟
+    VERIFICATION_TTL: 600, // 验证标记过期时间（秒），10 分钟
 };
 
 module.exports = {
