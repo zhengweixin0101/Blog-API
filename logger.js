@@ -141,34 +141,6 @@ function parseBrowser(userAgent) {
 }
 
 /**
- * 判断是否为公开的GET操作
- * @param {string} method - 请求方法
- * @param {string} path - 请求路径
- * @returns {boolean}
- */
-function isPublicGetOperation(method, path) {
-    // GET请求且路径不包含 /api/system、/api/logs
-    return method === 'GET' &&
-           !path.startsWith('/api/system') &&
-           !path.startsWith('/api/logs');
-}
-
-/**
- * 获取日志过期时间（秒）
- * @param {string} method - 请求方法
- * @param {string} path - 请求路径
- * @returns {number} 过期时间（秒）
- */
-function getLogExpiry(method, path) {
-    // 公开的GET操作：7天
-    if (isPublicGetOperation(method, path)) {
-        return Log.PUBLIC_GET_EXPIRY;
-    }
-    // 其他系统操作：30天
-    return Log.SYSTEM_EXPIRY;
-}
-
-/**
  * 记录操作日志
  * @param {Object} options - 日志选项
  * @param {string} options.action - 操作名称
@@ -211,14 +183,12 @@ log: async (action, ip, location, userAgent, method, path, status, tokenInfo = n
             created_at: new Date(score).toISOString()
         };
 
-        // 计算过期时间
-        const expiry = getLogExpiry(method, path);
-
         // 存储到 Sorted Set
         await db.redis.zadd(CacheKeys.LOGS_LIST_KEY, score, JSON.stringify(logData));
 
-        // 设置 Sorted Set 过期时间
-        await db.redis.expire(CacheKeys.LOGS_LIST_KEY, Log.SYSTEM_EXPIRY);
+        // 写入时清理过期日志
+        const expiryTime = Date.now() - Log.SYSTEM_EXPIRY * 1000;
+        await db.redis.zremrangebyscore(CacheKeys.LOGS_LIST_KEY, '-inf', expiryTime);
 
         return logId;
     } catch (error) {

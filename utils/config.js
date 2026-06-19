@@ -70,8 +70,7 @@ const RateLimit = {
  * 日志配置
  */
 const Log = {
-    PUBLIC_GET_EXPIRY: 7 * 24 * 60 * 60,    // 公开 GET 操作日志过期时间（秒），7 天
-    SYSTEM_EXPIRY: 30 * 24 * 60 * 60,       // 系统操作日志过期时间（秒），30 天
+    SYSTEM_EXPIRY: 30 * 24 * 60 * 60,       // 日志保留时间（秒），30 天
     LOCATION_EXPIRY: 30 * 24 * 60 * 60,     // IP 定位缓存过期时间（秒），30 天
 };
 
