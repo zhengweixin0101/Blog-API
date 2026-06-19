@@ -54,9 +54,7 @@ async function rateLimitCheck(req) {
                'unknown';
     const key = `${CacheKeys.SYSTEM_RATE_LIMIT_PREFIX}${ip}`;
     const count = await redis.incr(key);
-    if (count === 1) {
-        await redis.expire(key, Math.ceil(RateLimit.WINDOW_MS / 1000));
-    }
+    await redis.expire(key, Math.ceil(RateLimit.WINDOW_MS / 1000));
     return { ip, count };
 }
 
@@ -88,7 +86,7 @@ const tokensRoute = require('./api/system/tokens');
 const configRoute = require('./api/system/config');
 const logsRoute = require('./api/logs');
   
-app.use('/api/system/login', loginLimiter, validate(loginSchema), verifyTurnstile, loginRoute);
+app.use('/api/system/login', loginLimiter, validate(loginSchema), loginRoute);
 app.use('/api/system/updateAccount', verifyAuth, requirePermission('super'), validate(updateAccountSchema), verifyTurnstile, updateAccountRoute);
 
 app.use('/api/system/tokens', verifyAuth, requirePermission('super'), (req, res, next) => {

@@ -23,6 +23,28 @@ router.post('/', asyncHandler(async (req, res) => {
     const { username, password } = req.body;
     const ip = turnstile.getClientIp(req);
 
+    // 人机验证检查（每次失败后都需要验证）
+    const needVerification = await turnstile.isNeedVerification(ip);
+    if (needVerification) {
+        const turnstileToken = (req.body && req.body.turnstileToken) || req.headers['x-turnstile-token'];
+        if (!turnstileToken) {
+            return res.status(400).json({
+                success: false,
+                error: '请先完成人机验证',
+                needTurnstile: true
+            });
+        }
+        const verifyResult = await turnstile.verifyTurnstileToken(turnstileToken);
+        if (!verifyResult.success) {
+            return res.status(403).json({
+                success: false,
+                error: '人机验证失败',
+                detail: verifyResult.errorCodes,
+                needTurnstile: true
+            });
+        }
+    }
+
     // 从 configs 表获取管理员信息
     const result = await db.query(
         'SELECT value FROM configs WHERE key = $1',
