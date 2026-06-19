@@ -27,7 +27,14 @@ app.use(cors({
             return callback(null, true);
         }
         // 未设置白名单 → 放行所有；已设置白名单 → 仅放行列表中的域名
-        if (corsWhitelist === null || corsWhitelist.includes(origin)) {
+        if (corsWhitelist === null || corsWhitelist.some(pattern => {
+            if (pattern.startsWith('*.')) {
+                const domain = pattern.slice(1); // ".example.com"
+                const host = new URL(origin).hostname;
+                return host === pattern.slice(2) || host.endsWith(domain);
+            }
+            return origin === pattern;
+        })) {
             callback(null, true);
         } else {
             console.warn(`⚠️  CORS 拦截：来源 ${origin} 不在白名单中`);

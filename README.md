@@ -12,7 +12,7 @@
 |--------|------|------|
 | `DATABASE_URL` | 是 | PostgreSQL 连接字符串 |
 | `REDIS_URL` | 是 | Redis 连接字符串 |
-| `CORS_ORIGINS` | 否 | CORS 允许的来源域名，多个用逗号分隔。未设置时允许所有来源。示例：`https://example.com,https://www.example.com` |
+| `CORS_ORIGINS` | 否 | CORS 允许的来源域名，多个用逗号分隔。支持泛域名（`*.example.com`）。未设置时允许所有来源。示例：`https://*.example.com,https://www.example.com` |
 | `TURNSTILE_SECRET_KEY` | 否 | Cloudflare Turnstile 密钥，未设置时禁用人机验证 |
 
 ## 常量配置
