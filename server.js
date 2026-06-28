@@ -20,12 +20,27 @@ const corsWhitelist = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
     : null;
 
+const { App, RateLimit, AllowCors } = require('./utils/config');
+const { CacheKeys } = require('./utils/constants');
+const redis = db.redis;
+
 app.use(cors({
-    origin: function (origin, callback) {
+    origin: async function (origin, callback) {
         // 允许无 origin 的请求（如 Postman、curl、服务端调用）
         if (!origin) {
             return callback(null, true);
         }
+
+        // 检查允许跨域是否开启
+        try {
+            const allowCorsEnabled = await redis.get(CacheKeys.SYSTEM_ALLOW_CORS);
+            if (allowCorsEnabled === '1') {
+                return callback(null, true);
+            }
+        } catch (err) {
+            // Redis 查询失败时继续使用白名单判断
+        }
+
         // 未设置白名单 → 放行所有；已设置白名单 → 仅放行列表中的域名
         if (corsWhitelist === null || corsWhitelist.some(pattern => {
             if (pattern.startsWith('*.')) {
@@ -46,12 +61,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const { App, RateLimit } = require('./utils/config');
-const { CacheKeys } = require('./utils/constants');
 const PORT = process.env.PORT || App.PORT;
 
 // Redis-based 速率限制：每个 IP 每分钟最多 N 次请求
-const redis = db.redis;
 async function rateLimitCheck(req) {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
                req.headers['x-real-ip'] ||
@@ -188,6 +200,54 @@ app.use('/api/logs', verifyAuth, requirePermission('super'), (req, res, next) =>
 
     next();
 }, logsRoute);
+
+// 允许跨域路由
+app.post('/api/system/allowcors', verifyAuth, requirePermission('super'), async (req, res, next) => {
+    try {
+        const { enabled } = req.body;
+        if (typeof enabled !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                error: 'enabled 字段必须是布尔值'
+            });
+        }
+
+        if (enabled) {
+            await redis.set(CacheKeys.SYSTEM_ALLOW_CORS, '1', 'EX', AllowCors.TTL);
+            console.log(`允许跨域已开启，${AllowCors.TTL / 60} 分钟后自动关闭`);
+        } else {
+            await redis.del(CacheKeys.SYSTEM_ALLOW_CORS);
+            console.log('允许跨域已手动关闭');
+        }
+
+        res.json({
+            success: true,
+            data: {
+                enabled,
+                ttl: enabled ? AllowCors.TTL : 0
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/system/allowcors', verifyAuth, requirePermission('super'), async (req, res, next) => {
+    try {
+        const ttl = await redis.ttl(CacheKeys.SYSTEM_ALLOW_CORS);
+        const enabled = ttl > 0;
+
+        res.json({
+            success: true,
+            data: {
+                enabled,
+                ttl: enabled ? ttl : 0
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+});
 
 // 404 处理
 app.use(notFoundHandler);

@@ -81,6 +81,13 @@ const Turnstile = {
     VERIFICATION_TTL: 600, // 验证标记过期时间（秒），10 分钟
 };
 
+/**
+ * 允许跨域配置
+ */
+const AllowCors = {
+    TTL: 30 * 60, // 过期时间（秒），30 分钟
+};
+
 module.exports = {
     Auth,
     Cache,
@@ -90,4 +97,5 @@ module.exports = {
     RateLimit,
     Log,
     Turnstile,
+    AllowCors,
 };

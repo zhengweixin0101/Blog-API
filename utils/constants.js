@@ -31,6 +31,7 @@ const CacheKeys = {
     SYSTEM_RATE_LIMIT_PREFIX: 'system:ratelimit:',
     SYSTEM_RATE_LIMIT_PATTERN: 'system:ratelimit:*',
     SYSTEM_TURNSTILE_PREFIX: 'system:turnstile:',
+    SYSTEM_ALLOW_CORS: 'system:allowcors',
 
     // 缓存匹配模式（用于 SCAN 命令）
     POSTS_PATTERN: 'posts:*',
