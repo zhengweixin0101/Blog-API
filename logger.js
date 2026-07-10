@@ -67,25 +67,21 @@ async function getLocation(ip) {
             }
         },
         {
-            name: 'whois.pconline',
-            url: `https://whois.pconline.com.cn/ip.jsp?ip=${ip}`,
+            name: 'baidu',
+            url: `https://opendata.baidu.com/api.php?co=&resource_id=6006&oe=utf8&query=${ip}`,
             parse: (data) => {
-                return data.trim() || null;
+                if (data.status === '0' && data.data && data.data[0] && data.data[0].location) {
+                    return data.data[0].location;
+                }
+                return null;
             }
         },
         {
-            name: 'ip.taobao',
-            url: `https://ip.taobao.com/outGetIpInfo?ip=${ip}&accessKey=alibaba-inc`,
+            name: 'ipinfo.io',
+            url: `https://ipinfo.io/${ip}/json`,
             parse: (data) => {
-                if (data.code === 0 && data.data) {
-                    const d = data.data;
-                    if (d.country === '中国') {
-                        // 中国IP显示省份+运营商
-                        return `${d.region || ''} ${d.city || ''} ${d.isp || ''}`.trim();
-                    } else {
-                        // 国外IP显示国家
-                        return d.country || '未知';
-                    }
+                if (data.country) {
+                    return `${data.country || ''} ${data.region || ''} ${data.city || ''} ${data.org || ''}`.trim();
                 }
                 return null;
             }
@@ -95,7 +91,7 @@ async function getLocation(ip) {
     for (const provider of providers) {
         try {
             const response = await axios.get(provider.url, {
-                timeout: 2000
+                timeout: 5000
             });
             const location = provider.parse(response.data);
             if (location) {
