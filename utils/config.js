@@ -71,7 +71,7 @@ const RateLimit = {
  */
 const Log = {
     SYSTEM_EXPIRY: 90 * 24 * 60 * 60,       // 日志保留时间（秒），90 天
-    LOCATION_EXPIRY: 30 * 24 * 60 * 60,     // IP 定位缓存过期时间（秒），30 天
+    LOCATION_EXPIRY: 24 * 60 * 60,     // IP 定位缓存过期时间（秒），1 天
 };
 
 /**
