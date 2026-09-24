@@ -41,14 +41,15 @@ const CacheKeys = {
 
     /**
      * 生成文章列表缓存键
-     * 格式: posts:list<:fields><:pageSize><:page><:all>
+     * 格式: posts:list<:fields><:pageSize><:page><:all><:sort>
      * @param {boolean} all - 是否包含未发布文章
      * @param {string[]} fields - 请求的字段
      * @param {number} page - 页码
      * @param {number} pageSize - 每页数量
+     * @param {string} sort - 排序方式（可选）
      * @returns {string} 缓存键
      */
-    postListKey: (all = false, fields = null, page = null, pageSize = null) => {
+    postListKey: (all = false, fields = null, page = null, pageSize = null, sort = null) => {
         let key = 'posts:list';
         // 字段参数
         if (fields && fields.length > 0) {
@@ -65,17 +66,23 @@ const CacheKeys = {
             key += ':all';
         }
 
+        // 排序方式（非desc时才添加，与 talksListKey 保持一致）
+        if (sort && sort.toLowerCase() !== 'desc') {
+            key += `:${sort}`;
+        }
+
         return key;
     },
 
     /**
      * 生成文章详情缓存键
+     * 使用独立前缀 posts:detail:，避免与列表键 posts:list 命名空间冲突
      * @param {string} slug - 文章 slug
      * @param {boolean} isHtml - 是否为 HTML 格式
      * @returns {string} 缓存键
      */
     postDetailKey: (slug, isHtml = false) => {
-        return isHtml ? `posts:html:${slug}` : `posts:${slug}`;
+        return isHtml ? `posts:html:${slug}` : `posts:detail:${slug}`;
     },
 
     /**

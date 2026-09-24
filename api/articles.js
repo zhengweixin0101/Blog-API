@@ -112,7 +112,7 @@ router.get('/', asyncHandler(async (req, res) => {
     }
 
     const all = posts === 'all';
-    const cacheKey = CacheKeys.postListKey(all, fields, page, pageSize);
+    const cacheKey = CacheKeys.postListKey(all, fields, page, pageSize, sort);
 
     const cached = await redis.get(cacheKey);
     if (cached) {
@@ -202,6 +202,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
     const newArticle = result.rows[0];
     await clearPostListCache();
+    await clearPostCache(slug);
 
     await logger.logFromRequest(req, `添加文章 "${slug}"`, 201);
 
