@@ -18,6 +18,7 @@ const FIELD_MAP = {
     tags: 'tags',
     published: 'published',
     date: "TO_CHAR(date, 'YYYY-MM-DD') AS date",
+    updated: "TO_CHAR(updated_at, 'YYYY-MM-DD') AS updated",
 };
 
 /**
@@ -49,6 +50,7 @@ router.get('/:slug', asyncHandler(async (req, res) => {
     const { rows } = await db.query(
         `SELECT slug, title, description, tags, content,
                 TO_CHAR(date, 'YYYY-MM-DD') AS date,
+                TO_CHAR(updated_at, 'YYYY-MM-DD') AS updated,
                 published
          FROM articles
          WHERE slug = $1`,
@@ -79,6 +81,7 @@ router.get('/:slug', asyncHandler(async (req, res) => {
             slug: article.slug,
             title: article.title,
             date: article.date,
+            updated: article.updated,
             description: article.description || '',
             tags: article.tags || [],
             published: article.published,

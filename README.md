@@ -402,7 +402,7 @@ GET /api/system/config?key=site_name
 **说明**:
 - 当不传 `page` 和 `pageSize` 时，返回所有匹配的文章（不分页）
 - 当传入 `page` 和 `pageSize` 时，返回分页数据
-- `fields` 参数指定的字段必须是以下之一：`slug`, `title`, `description`, `tags`, `published`, `date`
+- `fields` 参数指定的字段必须是以下之一：`slug`, `title`, `description`, `tags`, `published`, `date`, `updated`
 
 **错误响应**:
 - `400` - 排序参数无效（只能为 asc 或 desc）
@@ -427,7 +427,8 @@ GET /api/articles?sort=asc
       "description": "这是文章摘要",
       "tags": ["技术", "Vue"],
       "published": true,
-      "date": "2024-01-01"
+      "date": "2024-01-01",
+      "updated": "2024-01-02"
     }
   ]
 }
@@ -460,7 +461,8 @@ GET /api/articles/my-first-post?type=html
     "description": "这是文章摘要",
     "tags": ["技术", "Vue"],
     "published": true,
-    "date": "2024-01-01"
+    "date": "2024-01-01",
+    "updated": "2024-01-02"
   },
   "content": "<h1>文章内容</h1><p>...</p>"
 }
@@ -908,7 +910,7 @@ DELETE /api/logs?days=7
 
 ---
 
-## 数据字段说明
+## 数据库字段说明
 
 ### Article (文章)
 | 字段 | 类型 | 说明 |
