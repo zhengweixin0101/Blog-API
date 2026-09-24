@@ -32,67 +32,64 @@ router.get('/', asyncHandler(async (req, res) => {
     try {
         const start = parseInt(page);
         const size = parseInt(pageSize);
-        const offset = (start - 1) * size;
+        const targetStart = (start - 1) * size;
+        const targetEnd = targetStart + size - 1;
 
-        // 使用 ZREVRANGE 分页查询（倒序）
-        const logStrings = await redis.zrevrange(
-            CacheKeys.LOGS_LIST_KEY,
-            offset,
-            offset + size - 1
-        );
+        const minScore = startDate ? new Date(startDate).getTime() : '-inf';
+        const maxScore = endDate ? new Date(endDate).getTime() : '+inf';
 
-        // 解析日志
-        let logs = [];
-        for (const logStr of logStrings) {
-            try {
-                const log = JSON.parse(logStr);
-                // 验证必需字段
-                if (!log.id || !log.action || !log.created_at) {
+        const statusNum = status !== undefined ? parseInt(status) : null;
+        const actionLower = action ? action.toLowerCase() : null;
+
+        const matchFilter = (log) => {
+            if (!log.id || !log.action || !log.created_at) return false;
+            if (actionLower && !log.action.toLowerCase().includes(actionLower)) return false;
+            if (method && log.method !== method) return false;
+            if (statusNum !== null && log.status !== statusNum) return false;
+            return true;
+        };
+
+        const BATCH = 200;
+        const pageLogs = [];
+        let matched = 0;
+        let scanned = 0;
+
+        while (true) {
+            const batch = await redis.zrevrangebyscore(
+                CacheKeys.LOGS_LIST_KEY,
+                maxScore,
+                minScore,
+                'LIMIT',
+                scanned,
+                BATCH - 1
+            );
+            if (batch.length === 0) break;
+            scanned += batch.length;
+
+            for (const logStr of batch) {
+                let log;
+                try {
+                    log = JSON.parse(logStr);
+                } catch (parseError) {
+                    console.warn('解析日志失败:', parseError);
                     continue;
                 }
-                // 解析浏览器信息
-                log.browser = logger.parseBrowser(log.user_agent);
-                logs.push(log);
-            } catch (parseError) {
-                console.warn('解析日志失败:', parseError);
+                if (!matchFilter(log)) continue;
+
+                if (matched >= targetStart && matched <= targetEnd) {
+                    log.browser = logger.parseBrowser(log.user_agent);
+                    pageLogs.push(log);
+                }
+                matched++;
             }
+
+            if (batch.length < BATCH) break;
         }
 
-        // 应用筛选条件
-        if (action) {
-            logs = logs.filter(log => log.action.toLowerCase().includes(action.toLowerCase()));
-        }
-
-        if (method) {
-            logs = logs.filter(log => log.method === method);
-        }
-
-        if (status) {
-            logs = logs.filter(log => log.status === parseInt(status));
-        }
-
-        if (startDate) {
-            const startTime = new Date(startDate).getTime();
-            logs = logs.filter(log => new Date(log.created_at).getTime() >= startTime);
-        }
-
-        if (endDate) {
-            const endTime = new Date(endDate).getTime();
-            logs = logs.filter(log => new Date(log.created_at).getTime() <= endTime);
-        }
-
-        // 获取总数
-        let total = await redis.zcard(CacheKeys.LOGS_LIST_KEY);
-
-        // 如果有日期筛选，需要重新计算总数
-        if (startDate || endDate) {
-            const minScore = startDate ? new Date(startDate).getTime() : '-inf';
-            const maxScore = endDate ? new Date(endDate).getTime() : '+inf';
-            total = await redis.zcount(CacheKeys.LOGS_LIST_KEY, minScore, maxScore);
-        }
+        const total = matched;
 
         // 格式化时间
-        const processedLogs = logs.map(log => ({
+        const processedLogs = pageLogs.map(log => ({
             ...log,
             created_at: new Date(log.created_at).toLocaleString('zh-CN', {
                 year: 'numeric',
@@ -148,7 +145,7 @@ router.delete('/', asyncHandler(async (req, res) => {
         if (daysNum === 0) {
             // 清空所有日志
             const deletedCount = await redis.del(CacheKeys.LOGS_LIST_KEY);
-            await logger.logFromRequest(req, `清空所有日志，删除 ${deletedCount} 条记录`, 200);
+            logger.logFromRequest(req, `清空所有日志，删除 ${deletedCount} 条记录`, 200);
 
             res.json({
                 success: true,
@@ -168,7 +165,7 @@ router.delete('/', asyncHandler(async (req, res) => {
                 expireTime
             );
 
-            await logger.logFromRequest(req, `清理 ${daysNum} 天前的日志，删除 ${deletedCount} 条记录`, 200);
+            logger.logFromRequest(req, `清理 ${daysNum} 天前的日志，删除 ${deletedCount} 条记录`, 200);
 
             res.json({
                 success: true,

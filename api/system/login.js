@@ -87,7 +87,7 @@ router.post('/', asyncHandler(async (req, res) => {
         await turnstile.clearVerification(ip);
 
         // 记录登录日志
-        await logger.logFromRequest(req, '注册管理员', 200);
+        logger.logFromRequest(req, '注册管理员', 200);
 
         return res.json({
             success: true,
@@ -102,7 +102,7 @@ router.post('/', asyncHandler(async (req, res) => {
     // 先验证用户名，再验证密码
     if (adminConfig.username !== username) {
         await turnstile.setNeedVerification(ip);
-        await logger.logFromRequest(req, '登录失败-用户名错误', 401);
+        logger.logFromRequest(req, '登录失败-用户名错误', 401);
 
         const err = new Error('用户名或密码错误');
         err.status = 401;
@@ -112,7 +112,7 @@ router.post('/', asyncHandler(async (req, res) => {
     const isValid = await bcrypt.compare(password, adminConfig.password);
     if (!isValid) {
         await turnstile.setNeedVerification(ip);
-        await logger.logFromRequest(req, '登录失败-密码错误', 401);
+        logger.logFromRequest(req, '登录失败-密码错误', 401);
 
         const err = new Error('用户名或密码错误');
         err.status = 401;
@@ -142,7 +142,7 @@ router.post('/', asyncHandler(async (req, res) => {
     await turnstile.clearVerification(ip);
 
     // 记录登录成功日志
-    await logger.logFromRequest(req, '登录成功', 200);
+    logger.logFromRequest(req, '登录成功', 200);
 
     res.json({
         success: true,

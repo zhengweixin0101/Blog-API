@@ -144,7 +144,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
-    await logger.logFromRequest(req, `添加说说 #${result.rows[0].id}`, 201);
+    logger.logFromRequest(req, `添加说说 #${result.rows[0].id}`, 201);
 
     res.json({
         success: true,
@@ -216,7 +216,7 @@ router.put('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
-    await logger.logFromRequest(req, `编辑说说 #${id}`, 200);
+    logger.logFromRequest(req, `编辑说说 #${id}`, 200);
 
     res.json({
         success: true,
@@ -250,7 +250,7 @@ router.delete('/', asyncHandler(async (req, res) => {
 
     await clearTalksCache();
 
-    await logger.logFromRequest(req, `删除说说 #${id}`, 200);
+    logger.logFromRequest(req, `删除说说 #${id}`, 200);
 
     res.json({
         success: true,

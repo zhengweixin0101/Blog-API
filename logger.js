@@ -196,28 +196,33 @@ log: async (action, ip, location, userAgent, method, path, status, tokenInfo = n
      * 从请求对象记录日志
      * @param {Object} req - 请求对象
      * @param {string} action - 操作名称
-     * @param {number} status - 状态码
+     * @param {number} status - 响应状态码
      * @param {Object} tokenInfo - Token信息（可选）
      */
     logFromRequest: async (req, action, status, tokenInfo = null) => {
-        const ip = getClientIp(req);
-        const location = await getLocation(ip);
-        const userAgent = req.headers['user-agent'] || 'unknown';
-        // 使用 originalUrl 获取完整路径（包含查询参数）
-        const path = req.originalUrl || req.path;
-        // 如果没有传入 tokenInfo，从请求头获取
-        const authToken = tokenInfo || getAuthToken(req);
+        try {
+            const ip = getClientIp(req);
+            const locationPromise = getLocation(ip).catch(() => '未知');
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            // 使用 originalUrl 获取完整路径（包含查询参数）
+            const path = req.originalUrl || req.path;
+            // 如果没有传入 tokenInfo，从请求头获取
+            const authToken = tokenInfo || getAuthToken(req);
 
-        return logger.log(
-            action,
-            ip,
-            location,
-            userAgent,
-            req.method,
-            path,
-            status,
-            authToken
-        );
+            const location = await locationPromise;
+            return await logger.log(
+                action,
+                ip,
+                location,
+                userAgent,
+                req.method,
+                path,
+                status,
+                authToken
+            );
+        } catch (error) {
+            console.error('日志记录失败:', error);
+        }
     },
 
     /**

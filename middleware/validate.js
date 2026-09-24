@@ -7,6 +7,8 @@ const loginSchema = Joi.object({
     turnstileToken: Joi.string().optional()
 });
 
+const turnstileTokenField = Joi.string().optional();
+
 // 文章验证
 const articleSchema = Joi.object({
     slug: Joi.string().min(1).max(200).required(),
@@ -15,7 +17,8 @@ const articleSchema = Joi.object({
     tags: Joi.array().items(Joi.string()).optional(),
     description: Joi.string().allow(null, '').max(1000).optional(),
     date: Joi.date().iso().allow(null).optional(),
-    published: Joi.boolean().optional()
+    published: Joi.boolean().optional(),
+    turnstileToken: turnstileTokenField
 });
 
 // 编辑文章验证
@@ -26,18 +29,21 @@ const editArticleSchema = Joi.object({
     tags: Joi.array().items(Joi.string()).optional(),
     description: Joi.string().allow(null, '').max(1000).optional(),
     date: Joi.date().iso().allow(null).optional(),
-    published: Joi.boolean().optional()
+    published: Joi.boolean().optional(),
+    turnstileToken: turnstileTokenField
 });
 
 // 编辑 slug 验证
 const editSlugSchema = Joi.object({
     oldSlug: Joi.string().min(1).max(200).required(),
-    newSlug: Joi.string().min(1).max(200).required()
+    newSlug: Joi.string().min(1).max(200).required(),
+    turnstileToken: turnstileTokenField
 });
 
 // 删除文章验证
 const deleteArticleSchema = Joi.object({
-    slug: Joi.string().min(1).max(200).required()
+    slug: Joi.string().min(1).max(200).required(),
+    turnstileToken: turnstileTokenField
 });
 
 // 说说验证
@@ -52,7 +58,8 @@ const talkSchema = Joi.object({
         alt: Joi.string().required(),
         url: Joi.string().uri().required()
     })).max(10).optional(),
-    tags: Joi.array().items(Joi.string().max(50)).max(10).optional()
+    tags: Joi.array().items(Joi.string().max(50)).max(10).optional(),
+    turnstileToken: turnstileTokenField
 });
 
 // 编辑说说验证
@@ -68,7 +75,8 @@ const editTalkSchema = Joi.object({
         alt: Joi.string().required(),
         url: Joi.string().uri().required()
     })).max(10).optional(),
-    tags: Joi.array().items(Joi.string().max(50)).max(10).optional()
+    tags: Joi.array().items(Joi.string().max(50)).max(10).optional(),
+    turnstileToken: turnstileTokenField
 });
 
 // 删除说说验证
@@ -76,19 +84,22 @@ const deleteTalkSchema = Joi.object({
     id: Joi.alternatives().try(
         Joi.number().integer().positive(),
         Joi.string()
-    ).required()
+    ).required(),
+    turnstileToken: turnstileTokenField
 });
 
 // 修改账号验证
 const updateAccountSchema = Joi.object({
     username: Joi.string().min(1).max(100).optional(),
     password: Joi.string().min(1).optional(),
-    currentPassword: Joi.string().required()
+    currentPassword: Joi.string().required(),
+    turnstileToken: turnstileTokenField
 }).or('username', 'password');
 
 // Token 删除验证
 const deleteTokenSchema = Joi.object({
-    id: Joi.number().integer().positive().required()
+    id: Joi.number().integer().positive().required(),
+    turnstileToken: turnstileTokenField
 });
 
 // Token 创建验证
@@ -106,14 +117,16 @@ const createTokenSchema = Joi.object({
             'talk:write',
             'talk:delete'
         )
-    ).min(1).default(['article:write', 'article:delete', 'talk:write', 'talk:delete'])
+    ).min(1).default(['article:write', 'article:delete', 'talk:write', 'talk:delete']),
+    turnstileToken: turnstileTokenField
 });
 
 // 设置配置验证
 const setConfigSchema = Joi.object({
     key: Joi.string().min(1).max(200).required(),
     value: Joi.any().required(),
-    description: Joi.string().allow(null, '').max(500).optional()
+    description: Joi.string().allow(null, '').max(500).optional(),
+    turnstileToken: turnstileTokenField
 });
 
 // 获取配置验证

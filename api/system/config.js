@@ -85,7 +85,7 @@ router.post('/', asyncHandler(async (req, res) => {
     const action = existingConfig.rows.length > 0
         ? `更新配置 "${key}"`
         : `创建配置 "${key}"`;
-    await logger.logFromRequest(req, action, 200);
+    logger.logFromRequest(req, action, 200);
 
     res.json({
         success: true,

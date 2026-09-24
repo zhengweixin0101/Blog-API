@@ -58,12 +58,20 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 const PORT = process.env.PORT || App.PORT;
 
 // Redis-based 速率限制：每个 IP 每分钟最多 N 次请求
+const RATE_LIMIT_LUA = `
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return count
+`;
+
 async function rateLimitCheck(req) {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
                req.headers['x-real-ip'] ||
@@ -72,8 +80,8 @@ async function rateLimitCheck(req) {
                req.ip ||
                'unknown';
     const key = `${CacheKeys.SYSTEM_RATE_LIMIT_PREFIX}${ip}`;
-    const count = await redis.incr(key);
-    await redis.expire(key, Math.ceil(RateLimit.WINDOW_MS / 1000));
+    const windowSeconds = Math.ceil(RateLimit.WINDOW_MS / 1000);
+    const count = await redis.eval(RATE_LIMIT_LUA, 1, key, windowSeconds);
     return { ip, count };
 }
 

@@ -74,7 +74,7 @@ router.post('/', asyncHandler(async (req, res) => {
         } while (cursor !== '0');
     }
 
-    await logger.logFromRequest(req, '更新账户信息', 200);
+    logger.logFromRequest(req, '更新账户信息', 200);
 
     res.json({
         success: true,

@@ -5,8 +5,6 @@
 const CacheKeys = {
     // 文章相关缓存键
     POST_LIST: 'posts:list',
-    POST_LIST_ALL: 'posts:list:all',
-    POST_LIST_FIELDS_PREFIX: 'posts:list:fields:',
     POST_PREFIX: 'posts:',
     POST_HTML_PREFIX: 'posts:html:',
 

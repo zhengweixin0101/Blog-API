@@ -20,8 +20,9 @@ const Cache = {
     TTL: {
         // 缓存过期时间（秒）
         POST_LIST: 60 * 60,      // 文章列表
-        POST_DETAIL: 60 * 60,    // 文章详情
-        TALKS_LIST: 60 * 60,     // 说说列表
+        POST_DETAIL: 60 * 60,   // 文章详情
+        TALKS_LIST: 60 * 60,    // 说说列表
+        NOT_FOUND: 60,          // 404 负缓存
     },
     DOUBLE_DELETE_DELAY: 500,    // 延迟双删间隔（毫秒）
     SCAN_COUNT: 100,             // Redis SCAN 每次返回数量

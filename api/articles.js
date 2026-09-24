@@ -34,6 +34,11 @@ router.get('/:slug', asyncHandler(async (req, res) => {
     const cached = await redis.get(cacheKey);
     if (cached) {
         const parsed = JSON.parse(cached);
+        if (parsed.__notFound) {
+            const err = new Error('文章未找到');
+            err.status = 404;
+            throw err;
+        }
         return res.json({
             success: true,
             message: '获取成功',
@@ -51,6 +56,12 @@ router.get('/:slug', asyncHandler(async (req, res) => {
     );
 
     if (!rows[0]) {
+        await redis.set(
+            cacheKey,
+            JSON.stringify({ __notFound: true }),
+            'EX',
+            Cache.TTL.NOT_FOUND
+        );
         const err = new Error('文章未找到');
         err.status = 404;
         throw err;
@@ -204,7 +215,7 @@ router.post('/', asyncHandler(async (req, res) => {
     await clearPostListCache();
     await clearPostCache(slug);
 
-    await logger.logFromRequest(req, `添加文章 "${slug}"`, 201);
+    logger.logFromRequest(req, `添加文章 "${slug}"`, 201);
 
     res.json({
         success: true,
@@ -260,7 +271,7 @@ router.put('/', asyncHandler(async (req, res) => {
     await clearPostListCache();
     await clearPostCache(slug);
 
-    await logger.logFromRequest(req, `编辑文章 "${slug}"`, 200);
+    logger.logFromRequest(req, `编辑文章 "${slug}"`, 200);
 
     res.json({
         success: true,
@@ -316,7 +327,7 @@ router.patch('/', asyncHandler(async (req, res) => {
     await clearPostCache(oldSlug);
     await clearPostCache(newSlug);
 
-    await logger.logFromRequest(req, `修改文章slug "${oldSlug}" → "${newSlug}"`, 200);
+    logger.logFromRequest(req, `修改文章slug "${oldSlug}" → "${newSlug}"`, 200);
 
     res.json({
         success: true,
@@ -352,7 +363,7 @@ router.delete('/', asyncHandler(async (req, res) => {
     await clearPostListCache();
     await clearPostCache(slug);
 
-    await logger.logFromRequest(req, `删除文章 "${slug}"`, 200);
+    logger.logFromRequest(req, `删除文章 "${slug}"`, 200);
 
     res.json({
         success: true,

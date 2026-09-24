@@ -61,7 +61,12 @@ async function verifyAuth(req, res, next) {
         'SELECT value FROM configs WHERE key = $1',
         ['admin']
     );
-    const adminConfig = adminResult.rows[0].value;
+    const adminConfig = adminResult.rows[0]?.value;
+    if (!adminConfig || !adminConfig.username) {
+        const err = new Error('管理员配置缺失');
+        err.status = 500;
+        throw err;
+    }
 
     // 更新最后使用时间
     parsedTokenData.last_used_at = new Date().toISOString();

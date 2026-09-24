@@ -97,7 +97,7 @@ router.post('/', asyncHandler(async (req, res) => {
     const tokenKey = CacheKeys.tokenKey(token);
     await redis.set(tokenKey, JSON.stringify(tokenData), 'EX', ttlSeconds);
 
-    await logger.logFromRequest(req, `创建Token "${name}"`, 201);
+    logger.logFromRequest(req, `创建Token "${name}"`, 201);
 
     res.json({
         success: true,
@@ -149,7 +149,7 @@ router.delete('/', asyncHandler(async (req, res) => {
                 if (parsedToken.id === id) {
                     await redis.del(key);
                     found = true;
-                    await logger.logFromRequest(req, `删除Token "${parsedToken.name}"`, 200);
+                    logger.logFromRequest(req, `删除Token "${parsedToken.name}"`, 200);
                     return res.json({
                         success: true,
                         message: `Token '${parsedToken.name}' 已删除`
