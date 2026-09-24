@@ -4,6 +4,36 @@
  */
 const logger = require('../logger');
 
+// 日志中需要脱敏的字段
+const SENSITIVE_FIELDS = ['password', 'currentPassword', 'turnstileToken'];
+
+/**
+ * 脱敏请求体，避免敏感信息进入日志
+ * @param {*} body - 请求体
+ * @returns {*} 脱敏后的副本
+ */
+function sanitizeBody(body) {
+    if (!body || typeof body !== 'object') {
+        return body;
+    }
+
+    if (Array.isArray(body)) {
+        return body.map(sanitizeBody);
+    }
+
+    const result = {};
+    for (const [key, value] of Object.entries(body)) {
+        if (SENSITIVE_FIELDS.includes(key)) {
+            result[key] = '***';
+        } else if (value && typeof value === 'object') {
+            result[key] = sanitizeBody(value);
+        } else {
+            result[key] = value;
+        }
+    }
+    return result;
+}
+
 function errorHandler(err, req, res, next) {
     // 记录错误日志（避免重复记录）
     if (!req._logged) {
@@ -16,7 +46,7 @@ function errorHandler(err, req, res, next) {
         stack: err.stack,
         path: req.path,
         method: req.method,
-        body: req.body,
+        body: sanitizeBody(req.body),
         query: req.query,
         timestamp: new Date().toISOString()
     });
