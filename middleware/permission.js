@@ -13,6 +13,10 @@ const Permissions = {
     TALK_WRITE: 'talk:write',         // 说说添加/编辑
     TALK_DELETE: 'talk:delete',       // 说说删除
 
+    // 分享权限
+    SHARE_WRITE: 'share:write',       // 分享添加/编辑
+    SHARE_DELETE: 'share:delete',     // 分享删除
+
     // 超级权限
     SUPER: 'super'
 };

@@ -88,6 +88,25 @@ const deleteTalkSchema = Joi.object({
     turnstileToken: turnstileTokenField
 });
 
+// 分享验证
+const shareSchema = Joi.object({
+    id: Joi.string().pattern(/^[A-Za-z0-9_-]{1,64}$/).optional(),
+    name: Joi.string().min(1).max(200).optional(),
+    description: Joi.string().allow('', null).max(500).optional(),
+    drives: Joi.array().items(Joi.object({
+        driveName: Joi.string().min(1).max(50).required(),
+        url: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+        accessCode: Joi.string().allow('', null).max(50).optional()
+    })).max(10).optional(),
+    turnstileToken: turnstileTokenField
+}).or('id', 'name');
+
+// 删除分享验证
+const deleteShareSchema = Joi.object({
+    id: Joi.string().pattern(/^[A-Za-z0-9_-]{1,64}$/).required(),
+    turnstileToken: turnstileTokenField
+});
+
 // 修改账号验证
 const updateAccountSchema = Joi.object({
     username: Joi.string().min(1).max(100).optional(),
@@ -115,9 +134,11 @@ const createTokenSchema = Joi.object({
             'article:write',
             'article:delete',
             'talk:write',
-            'talk:delete'
+            'talk:delete',
+            'share:write',
+            'share:delete'
         )
-    ).min(1).default(['article:write', 'article:delete', 'talk:write', 'talk:delete']),
+    ).min(1).default(['article:write', 'article:delete', 'talk:write', 'talk:delete', 'share:write', 'share:delete']),
     turnstileToken: turnstileTokenField
 });
 
@@ -184,6 +205,8 @@ module.exports = {
     talkSchema,
     editTalkSchema,
     deleteTalkSchema,
+    shareSchema,
+    deleteShareSchema,
     updateAccountSchema,
     deleteTokenSchema,
     createTokenSchema,

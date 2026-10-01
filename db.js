@@ -64,13 +64,23 @@ async function init() {
             await redis.del(keys);
         }
     } while (cursor !== '0');
+
+    // 清除分享缓存
+    cursor = '0';
+    do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.SHARES_PATTERN, 'COUNT', Cache.SCAN_COUNT);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+            await redis.del(keys);
+        }
+    } while (cursor !== '0');
     
     console.log('🧹 缓存已清除');
 
     const checkTablesQuery = `
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'configs');
+        WHERE table_schema = 'public' AND table_name IN ('articles', 'talks', 'configs', 'shares');
     `;
     const result = await pool.query(checkTablesQuery);
     const existingTables = result.rows.map(r => r.table_name);
@@ -119,6 +129,19 @@ async function init() {
         CREATE INDEX IF NOT EXISTS ${DBIndexes.CONFIGS_UPDATED_AT} ON configs(updated_at DESC);
     `;
 
+    const createSharesTableQuery = `
+        CREATE TABLE IF NOT EXISTS shares (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            drives JSONB NOT NULL DEFAULT '[]'::JSONB,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS ${DBIndexes.SHARES_CREATED_AT} ON shares(created_at DESC);
+    `;
+
     const newlyCreated = [];
 
     if (!existingTables.includes('articles')) {
@@ -134,6 +157,11 @@ async function init() {
     if (!existingTables.includes('configs')) {
         await pool.query(createAdminTableQuery);
         newlyCreated.push('configs');
+    }
+
+    if (!existingTables.includes('shares')) {
+        await pool.query(createSharesTableQuery);
+        newlyCreated.push('shares');
     }
 
     if (newlyCreated.length > 0) {

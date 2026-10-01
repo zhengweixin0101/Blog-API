@@ -22,6 +22,8 @@ const Cache = {
         POST_LIST: 60 * 60,      // 文章列表
         POST_DETAIL: 60 * 60,   // 文章详情
         TALKS_LIST: 60 * 60,    // 说说列表
+        SHARES_LIST: 60 * 60,  // 分享列表
+        SHARE_DETAIL: 60 * 60, // 分享详情
         NOT_FOUND: 60,          // 404 负缓存
     },
     DOUBLE_DELETE_DELAY: 500,    // 延迟双删间隔（毫秒）

@@ -97,8 +97,31 @@ async function clearTalksCache() {
     scheduleDoubleDelete(clear, '清除说说缓存时出错');
 }
 
+/**
+ * 清除所有分享相关的缓存
+ * 匹配模式：shares:*
+ */
+async function clearSharesCache() {
+    const clear = async () => {
+        let cursor = '0';
+        do {
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', CacheKeys.SHARES_PATTERN, 'COUNT', Cache.SCAN_COUNT);
+            cursor = nextCursor;
+            if (keys.length > 0) {
+                for (let i = 0; i < keys.length; i += Cache.DELETE_BATCH_SIZE) {
+                    await redis.del(...keys.slice(i, i + Cache.DELETE_BATCH_SIZE));
+                }
+            }
+        } while (cursor !== '0');
+    };
+
+    await deleteWithRetry(clear, '清除分享缓存时出错');
+    scheduleDoubleDelete(clear, '清除分享缓存时出错');
+}
+
 module.exports = {
     clearPostListCache,
     clearPostCache,
-    clearTalksCache
+    clearTalksCache,
+    clearSharesCache
 };

@@ -36,6 +36,8 @@
 | `article:delete` | 文章删除 |
 | `talk:write` | 说说添加、编辑 |
 | `talk:delete` | 说说删除 |
+| `share:write` | 分享添加、编辑 |
+| `share:delete` | 分享删除 |
 | `super` | 超级权限 |
 
 ### 接口权限要求
@@ -61,6 +63,10 @@
 | `POST /api/talks` | `talk:write` |
 | `PUT /api/talks` | `talk:write` |
 | `DELETE /api/talks` | `talk:delete` |
+| `GET /api/shares` | 公开 |
+| `GET /api/shares?id=xxx` | 公开 |
+| `POST /api/shares` | `share:write` |
+| `DELETE /api/shares` | `share:delete` |
 
 ### 创建自定义权限Token
 
@@ -92,6 +98,7 @@ curl -X POST http://localhost:8000/api/system/tokens \
   "expiresIn": 259200000,    // 仅登录接口（毫秒）
   "article": { ... },       // 单个文章
   "talk": { ... },          // 单个说说
+  "share": { ... },         // 单个分享
   "config": { ... },        // 单个配置
   "data": [...],            // 列表数据
   "allTags": [...],         // 所有标签（说说列表）
@@ -248,7 +255,7 @@ curl -X POST http://localhost:8000/api/system/tokens \
 - `name` - 必填，Token名称（1-100字符）
 - `description` - 可选，Token描述（0-500字符）
 - `expiresIn` - 过期时间（毫秒），未传该项时使用默认值（默认24小时），最小值为 1 毫秒
-- `permissions` - 权限数组，可选值：`article:write`、`article:delete`、`talk:write`、`talk:delete`。未传该项时默认为全部权限（`["article:write", "article:delete", "talk:write", "talk:delete"]`）
+- `permissions` - 权限数组，可选值：`article:write`、`article:delete`、`talk:write`、`talk:delete`、`share:write`、`share:delete`。未传该项时默认为全部权限（`["article:write", "article:delete", "talk:write", "talk:delete", "share:write", "share:delete"]`）
 - 不支持永不过期 token（但可以设置超长过期时间，如：9999年）
 
 **响应示例**:
@@ -807,6 +814,212 @@ GET /api/talks?sort=asc
 
 ---
 
+## 分享接口
+
+### GET /api/shares
+获取分享列表，或按 id 获取单个分享。
+
+**查询参数**:
+- `id` - 可选，分享 id。不传则返回列表；传则返回该分享
+- `type` - 可选，`json`（默认）或 `redirect`，仅当传了 `id` 时生效
+  - `json`：返回分享对象（含全部网盘）
+  - `redirect`：HTTP 302 跳转到一个网盘直链（浏览器直接打开），博客文章可写 `<a href="/api/shares?id=a3b5c7d9&type=redirect">`
+- `driveName` - 可选，`type=redirect` 时选定具体网盘，不传默认跳转 `drives[0]`
+
+**id 说明**:
+- 不传 `id` 时由服务端自动生成 8 位随机十六进制字符串（仅 `0-9a-f`）
+- 通过 POST 可指定为 1-64 位的字母、数字、`-`、`_`，区分大小写
+
+**说明**:
+- 单条结果缓存 `shares:detail:<id>` 1 小时，404 负缓存 60 秒，增/改/删后自动清理
+- 列表缓存 `shares:list` 1 小时
+
+**示例请求**:
+```
+GET /api/shares                                 # 完整列表
+GET /api/shares?id=a3b5c7d9                     # JSON 单条
+GET /api/shares?id=a3b5c7d9&type=redirect       # 302 跳转到 drives[0].url
+GET /api/shares?id=a3b5c7d9&type=redirect&driveName=阿里云盘  # 跳转到指定网盘
+```
+
+**响应示例·列表**:
+```json
+{
+  "success": true,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": "a3b5c7d9",
+      "name": "资源分享",
+      "description": "这是一个资源分享链接",
+      "drives": [
+        {
+          "driveName": "阿里云盘",
+          "url": "https://www.aliyundrive.com/s/xxxxxx",
+          "accessCode": "1234"
+        },
+        {
+          "driveName": "夸克网盘",
+          "url": "https://pan.quark.cn/s/yyyyyy",
+          "accessCode": null
+        }
+      ],
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+> 传入 `id` 时返回 `data` 为单个分享对象，`type=redirect` 时返回 302 而非 JSON。
+
+**响应示例·单条(id，type=json)**:
+```json
+{
+  "success": true,
+  "message": "获取成功",
+  "data": {
+    "id": "a3b5c7d9",
+    "name": "资源分享",
+    "description": "这是一个资源分享链接",
+    "drives": [
+      { "driveName": "阿里云盘", "url": "https://www.aliyundrive.com/s/xxxxxx", "accessCode": "1234" },
+      { "driveName": "夸克网盘", "url": "https://pan.quark.cn/s/yyyyyy", "accessCode": null }
+    ],
+    "created_at": "2024-01-01T00:00:00.000Z",
+    "updated_at": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**错误响应**:
+- `400` - `id` 格式不正确
+- `404` - 分享未找到 / `type=redirect` 时暂无可跳转的网盘或 `driveName` 不匹配
+
+---
+
+### POST /api/shares
+添加/修改分享
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**说明**:
+- 不传 `id` 为新增分享，`id` 由服务端自动生成（8 位随机十六进制字符串）
+- 传 `id` 时为「存在即改、不存在即建」：该 `id` 已存在则修改，不存在则以该 `id` 新增（可先在文章里写好 id 再创建分享）
+- 自定义 `id` 规则：1-64 位，仅允许字母、数字、`-`、`_`；**区分大小写**（`My-Res` 与 `my-res` 是两条不同记录）
+- 修改时未传的字段保持不变，`drives` 传则整组替换
+- 以 `id` 新增时必须提供 `name`
+- `drives` 最多 10 项，每项 `url` 仅支持 `http` / `https` 协议；`driveName` 1-50 字符，`accessCode` 最多 50 字符
+- 响应 `message` 会区分结果：`分享添加成功` 或 `分享更新成功`
+
+**请求体**:
+```json
+{
+  "name": "资源分享",
+  "description": "这是一个资源分享链接",
+  "drives": [
+    {
+      "driveName": "阿里云盘",
+      "url": "https://www.aliyundrive.com/s/xxxxxx",
+      "accessCode": "1234"
+    }
+  ],
+  "turnstileToken": "..."
+}
+```
+
+**指定 id 新增示例**:
+```json
+{
+  "id": "a3b5c7d9",
+  "name": "资源分享",
+  "drives": [
+    {
+      "driveName": "阿里云盘",
+      "url": "https://www.aliyundrive.com/s/xxxxxx",
+      "accessCode": "1234"
+    }
+  ],
+  "turnstileToken": "..."
+}
+```
+
+**修改示例**:
+```json
+{
+  "id": "a3b5c7d9",
+  "drives": [
+    {
+      "driveName": "百度网盘",
+      "url": "https://pan.baidu.com/s/zzzzzz",
+      "accessCode": "abcd"
+    }
+  ],
+  "turnstileToken": "..."
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "分享添加成功",
+  "share": {
+    "id": "my-2024-resources",
+    "name": "资源分享",
+    "description": "这是一个资源分享链接",
+    "drives": [
+      {
+        "driveName": "阿里云盘",
+        "url": "https://www.aliyundrive.com/s/xxxxxx",
+        "accessCode": "1234"
+      }
+    ],
+    "created_at": "2024-01-01T00:00:00.000Z",
+    "updated_at": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**错误响应**:
+- `400` - 分享 id 格式不正确 / 没有需要更新的字段 / 新增分享需要提供 name
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `409` - id 已被并发创建，请重试
+
+---
+
+### DELETE /api/shares
+删除分享
+
+**请求头**:
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**请求体**:
+```json
+{
+  "id": "a3b5c7d9",
+  "turnstileToken": "..."
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "分享 'a3b5c7d9' 删除成功"
+}
+```
+
+**错误响应**:
+- `401` - 未认证或 token 过期
+- `403` - 权限不足
+- `404` - 分享未找到
+
+---
+
 ## 日志接口
 
 ### GET /api/logs
@@ -936,6 +1149,16 @@ DELETE /api/logs?days=7
 | imgs | object[] | 图片数组，每项包含 `{alt, url}` |
 | tags | string[] | 标签数组 |
 | created_at | string | 创建时间 |
+
+### Share (分享)
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | string | 分享唯一标识符（1-64 位字母、数字、`-`、`_`，区分大小写；不指定时自动生成 8 位十六进制） |
+| name | string | 分享名称 |
+| description | string | 分享描述 |
+| drives | object[] | 网盘数组，每项包含 `{driveName, url, accessCode}` |
+| created_at | string | 创建时间 |
+| updated_at | string | 更新时间 |
 
 ### Config (配置)
 | 字段 | 类型 | 说明 |

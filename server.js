@@ -100,13 +100,14 @@ function loginLimiter(req, res, next) {
 // 中间件
 const verifyAuth = require('./middleware/auth');
 const verifyTurnstile = require('./middleware/turnstile');
-const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, updateAccountSchema, deleteTokenSchema, createTokenSchema, setConfigSchema, getConfigSchema, logsQuerySchema } = require('./middleware/validate');
+const { validate, loginSchema, articleSchema, editArticleSchema, deleteArticleSchema, editSlugSchema, talkSchema, editTalkSchema, deleteTalkSchema, shareSchema, deleteShareSchema, updateAccountSchema, deleteTokenSchema, createTokenSchema, setConfigSchema, getConfigSchema, logsQuerySchema } = require('./middleware/validate');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { requirePermission } = require('./middleware/permission');
 
 // 路由
 const articleRoute = require('./api/articles');
 const talksRoute = require('./api/talks');
+const sharesRoute = require('./api/shares');
 const loginRoute = require('./api/system/login');
 const updateAccountRoute = require('./api/system/updateAccount');
 const tokensRoute = require('./api/system/tokens');
@@ -195,6 +196,26 @@ app.use('/api/talks', (req, res, next) => {
         });
     });
 }, verifyTurnstile, talksRoute);
+
+app.use('/api/shares', (req, res, next) => {
+    if (req.method === 'GET') {
+        return next();
+    }
+
+    verifyAuth(req, res, () => {
+        if (req.method === 'POST') {
+            requirePermission('share:write')(req, res, () => {
+                validate(shareSchema)(req, res, next);
+            });
+        } else if (req.method === 'DELETE') {
+            requirePermission('share:delete')(req, res, () => {
+                validate(deleteShareSchema)(req, res, next);
+            });
+        } else {
+            next();
+        }
+    });
+}, verifyTurnstile, sharesRoute);
 
 // 日志相关路由
 app.use('/api/logs', verifyAuth, requirePermission('super'), (req, res, next) => {

@@ -11,6 +11,9 @@ const CacheKeys = {
     // 说说相关缓存键
     TALKS_PREFIX: 'talks:',
 
+    // 分享相关缓存键
+    SHARES_LIST: 'shares:list',
+
     // Token 相关缓存键
     TOKEN_PREFIX: 'tokens:',
     TOKEN_PATTERN: 'tokens:*',
@@ -34,6 +37,7 @@ const CacheKeys = {
     // 缓存匹配模式（用于 SCAN 命令）
     POSTS_PATTERN: 'posts:*',
     TALKS_PATTERN: 'talks:*',
+    SHARES_PATTERN: 'shares:*',
     TOKENS_PATTERN: 'tokens:*',
     LOGS_PATTERN: 'logs:*',
 
@@ -111,6 +115,15 @@ const CacheKeys = {
     },
 
     /**
+     * 生成分享详情缓存键
+     * @param {number|string} id - 分享 id
+     * @returns {string} 缓存键
+     */
+    shareDetailKey: (id) => {
+        return `shares:detail:${id}`;
+    },
+
+    /**
      * 生成 token 缓存键
      * @param {string} token - token 字符串
      * @returns {string} 缓存键
@@ -151,7 +164,10 @@ const DBIndexes = {
     TALKS_TAGS: 'idx_talks_tags',
 
     // configs 表索引
-    CONFIGS_UPDATED_AT: 'idx_configs_updated_at'
+    CONFIGS_UPDATED_AT: 'idx_configs_updated_at',
+
+    // shares 表索引
+    SHARES_CREATED_AT: 'idx_shares_created_at'
 };
 
 module.exports = {
