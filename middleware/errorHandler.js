@@ -34,10 +34,21 @@ function sanitizeBody(body) {
     return result;
 }
 
+/**
+ * 生成错误日志描述，附带跨域来源等定位信息
+ * @param {Error} err - 错误对象
+ * @param {Object} req - 请求对象
+ * @returns {string} 日志描述
+ */
+function buildErrorAction(err, req) {
+    const origin = err.origin || req.headers?.origin;
+    return origin ? `错误: ${err.message}（来源: ${origin}）` : `错误: ${err.message}`;
+}
+
 function errorHandler(err, req, res, next) {
     // 记录错误日志（避免重复记录）
     if (!req._logged) {
-        logger.logFromRequest(req, `错误: ${err.message}`, err.status || 500);
+        logger.logFromRequest(req, buildErrorAction(err, req), err.status || 500);
     }
 
     // 记录错误详细信息到控制台用于调试
@@ -46,6 +57,7 @@ function errorHandler(err, req, res, next) {
         stack: err.stack,
         path: req.path,
         method: req.method,
+        origin: err.origin || req.headers?.origin || null,
         body: sanitizeBody(req.body),
         query: req.query,
         timestamp: new Date().toISOString()

@@ -42,18 +42,29 @@ app.use(cors({
         }
 
         // 未设置白名单 → 放行所有；已设置白名单 → 仅放行列表中的域名
+        // 通配符匹配需要解析 hostname，Origin 非法时解析失败按不匹配处理
+        let hostname = null;
+        try {
+            hostname = new URL(origin).hostname;
+        } catch (err) {
+            // Origin 不是合法的绝对 URL
+        }
+
         if (corsWhitelist === null || corsWhitelist.some(pattern => {
             if (pattern.startsWith('*.')) {
+                if (!hostname) return false;
                 const domain = pattern.slice(1); // ".example.com"
-                const host = new URL(origin).hostname;
-                return host === pattern.slice(2) || host.endsWith(domain);
+                return hostname === pattern.slice(2) || hostname.endsWith(domain);
             }
             return origin === pattern;
         })) {
             callback(null, true);
         } else {
             console.warn(`⚠️  CORS 拦截：来源 ${origin} 不在白名单中`);
-            callback(new Error('不允许的跨域请求来源'));
+            const error = new Error('不允许的跨域请求来源');
+            error.status = 403;
+            error.origin = origin;
+            callback(error);
         }
     },
     credentials: true
