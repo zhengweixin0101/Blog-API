@@ -89,7 +89,7 @@ const Turnstile = {
  * 允许跨域配置
  */
 const AllowCors = {
-    TTL: 30 * 60, // 过期时间（秒），30 分钟
+    TTL: 2 * 60 * 60, // 过期时间（秒），2 小时
 };
 
 module.exports = {
